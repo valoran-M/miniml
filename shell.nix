@@ -14,5 +14,7 @@ pkgs.mkShell rec {
     ocamlPackages.opam-core
     ocamlPackages.ocp-indent
     ocamlPackages.menhir
+    ocamlPackages.ocamlbuild
+    ocamlPackages.utop
   ];
 }
