@@ -1,0 +1,10 @@
+(menhir
+  (flags -v)
+  (modules parser)
+)
+
+(ocamllex lexer)
+
+(executable
+ (public_name MiniMl)
+ (name interpreter))
