@@ -25,5 +25,5 @@ let () =
   let output_file = file ^ ".cat" in
   let out = open_out output_file in
   let outf = formatter_of_out_channel out in
-  Pparser.print_prog outf prog;
+  Mmlpp.print_prog outf prog;
   close_out out
