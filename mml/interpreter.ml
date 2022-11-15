@@ -1,4 +1,4 @@
-open Mml
+open Format
 
 let usage = "usage: ./mmli file.mml"
 let spec = []
@@ -17,14 +17,13 @@ let file =
       Arg.usage spec usage;
       exit 1
 
-let rec print_prog = function
-  | Int i -> string_of_int i
-  | Bop (Add, x, y) -> Printf.sprintf "(%s + %s)" (print_prog x) (print_prog y)
-  | Bop (Mul, x, y) -> Printf.sprintf "(%s * %s)" (print_prog x) (print_prog y)
-
 let () =
   let c = open_in file in
   let lb = Lexing.from_channel c in
   let prog = Parser.program Lexer.pattern lb in
   close_in c;
-  Printf.printf "%s\n" (print_prog prog.code)
+  let output_file = file ^ ".cat" in
+  let out = open_out output_file in
+  let outf = formatter_of_out_channel out in
+  Pparser.print_prog outf prog;
+  close_out out
