@@ -6,5 +6,5 @@
 (ocamllex lexer)
 
 (executable
- (public_name MiniMl)
+ (public_name miniml)
  (name interpreter))
