@@ -6,7 +6,7 @@ pkgs.mkShell rec {
     ocamlformat
     opam
     rlwrap
-    dune_2
+    dune_3
     # packages
     ocamlPackages.merlin
     ocamlPackages.ocaml-lsp
