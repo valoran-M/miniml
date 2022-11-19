@@ -1,29 +1,27 @@
-open Format
+open Mml
 
-let usage = "usage: ./mmli file.mml"
-let spec = []
+type value =
+    | VInt of int
+    | VBool of bool
 
-let file =
-  let file = ref None in
-  let set_file s =
-    if not (Filename.check_suffix s ".mml") then
-      raise (Arg.Bad "no .mml extension");
-    file := Some s
+let eval_prog (prog : prog) =
+  let rec evali (e : expr) : int =
+    match e with
+    | Int n -> n
+    | _ -> assert false
   in
-  Arg.parse spec set_file usage;
-  match !file with
-  | Some f -> f
-  | None ->
-      Arg.usage spec usage;
-      exit 1
 
-let () =
-  let c = open_in file in
-  let lb = Lexing.from_channel c in
-  let prog = Parser.program Lexer.pattern lb in
-  close_in c;
-  let output_file = file ^ ".cat" in
-  let out = open_out output_file in
-  let outf = formatter_of_out_channel out in
-  Mmlpp.print_prog outf prog;
-  close_out out
+  let rec eval (e : expr) : value =
+    match e with
+    | Int n -> VInt n
+    | Bool b -> VBool b
+    | Uop (Neg, e) -> VInt (-evali e)
+    | Bop (Add, e1, e2) -> VInt (evali e1 + evali e2)
+    | Bop (Sub, e1, e2) -> VInt (evali e1 - evali e2)
+    | Bop (Mul, e1, e2) -> VInt (evali e1 * evali e2)
+    | Bop (Div, e1, e2) -> VInt (evali e1 / evali e2)
+    | Seq (e1, e2) ->
+        let _ = eval e1 in
+        eval e2
+  in
+  eval prog.code
