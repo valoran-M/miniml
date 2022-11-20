@@ -24,13 +24,13 @@ rule pattern = parse
     | "false"   { BOOL(false) }
 
     (* opérations booléennes *)
-    | "not" { NOT }
-    | "=" { EQU }
-    | "!=" { NEQU }
-    | "<" { LT }
-    | "<=" { LE }
-    | "&&" { AND }
-    | "||" { OR }
+    | "not"     { NOT }
+    | "="       { EQU }
+    | "!="      { NEQU }
+    | "<"       { LT }
+    | "<="      { LE }
+    | "&&"      { AND }
+    | "||"      { OR }
 
     (* opérations arithmétiques *)
     | "+"       { PLUS }

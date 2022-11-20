@@ -14,16 +14,16 @@ let file =
   match !file with
   | Some f -> f
   | None ->
-    Arg.usage spec usage;
-    exit 1
+      Arg.usage spec usage;
+      exit 1
 
 let () =
   let c = open_in file in
   let lb = Lexing.from_channel c in
   let prog = Parser.program Lexer.pattern lb in
   close_in c;
-  let output_value = Interpreter.eval_prog prog in (match output_value with 
-      | VInt n -> print_int n
-      | VBool b -> print_bool b);
-
+  let output_value = Interpreter.eval_prog prog in
+  (match output_value with
+  | VInt n -> print_int n
+  | VBool b -> print_bool b);
   print_newline ()
