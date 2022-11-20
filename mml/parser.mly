@@ -14,6 +14,8 @@
 %start program
 %type <Mml.prog> program
 
+%left EQU NEQU LT LE
+
 %left SEMI
 %left PLUS MINUS
 %left MOD
