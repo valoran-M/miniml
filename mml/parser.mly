@@ -3,7 +3,7 @@
 %}
 
 %token STAR PLUS MINUS DIV 
-%token SEMI
+%token SEMI S_PAR E_PAR
 %token <bool> BOOL
 %token <int> CST
 %token EOF

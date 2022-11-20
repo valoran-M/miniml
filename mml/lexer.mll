@@ -3,12 +3,10 @@
     open Parser
 
     exception Lexing_error of string
-
-
 }
 
 let digit = [ '0'-'9' ]
-let number = (digit+) 
+let number = digit+ 
 let alpha = ['a'-'z' 'A'-'Z']
 let ident = ['a'-'z' '_'] (alpha | '_' | digit)*
 let true = "true"
@@ -29,6 +27,8 @@ rule pattern = parse
     | "*"       { STAR }
     | "/"       { DIV }
     | ";"       { SEMI }
+    | "("       { S_PAR }
+    | ")"       { E_PAR }
     | eof       { EOF }
 
 and comment = parse
