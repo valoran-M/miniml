@@ -22,8 +22,20 @@ rule pattern = parse
         }
     | "true"    { BOOL(true) }
     | "false"   { BOOL(false) }
+
+    (* opérations booléennes *)
+    | "not" { NOT }
+    | "=" { EQU }
+    | "!=" { NEQU }
+    | "<" { LT }
+    | "<=" { LE }
+    | "&&" { AND }
+    | "||" { OR }
+
+    (* opérations arithmétiques *)
     | "+"       { PLUS }
     | "-"       { MINUS }
+    | "mod"     { MOD }
     | "*"       { STAR }
     | "/"       { DIV }
     | ";"       { SEMI }

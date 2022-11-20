@@ -1,6 +1,6 @@
 open Format
 
-let usage = "usage: ./mmlcat file.mml"
+let usage = "usage: ./mmli file.mml"
 let spec = []
 
 let file =
@@ -14,16 +14,16 @@ let file =
   match !file with
   | Some f -> f
   | None ->
-      Arg.usage spec usage;
-      exit 1
+    Arg.usage spec usage;
+    exit 1
 
 let () =
   let c = open_in file in
   let lb = Lexing.from_channel c in
   let prog = Parser.program Lexer.pattern lb in
   close_in c;
-  let output_file = file ^ ".cat" in
-  let out = open_out output_file in
-  let outf = formatter_of_out_channel out in
-  Mmlpp.print_prog outf prog;
-  close_out out
+  let output_value = Interpreter.eval_prog prog in (match output_value with 
+      | VInt n -> print_int n
+      | VBool b -> print_bool b);
+
+  print_newline ()

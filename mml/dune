@@ -1,10 +1,9 @@
 (menhir
-  (flags -v)
-  (modules parser)
-)
+ (flags -v)
+ (modules parser))
 
 (ocamllex lexer)
 
-(executable
- (public_name miniml)
- (name mmlcat))
+(executables
+ (public_names debug miniml)
+ (names mmlcat mmli))
