@@ -4,6 +4,7 @@
 
     exception Lexing_error of string
 
+    (* hashtable avec tous les mots clefs *)
     let keyword_table = Hashtbl.create 7
     let () =
         List.iter (fun (x, y) -> Hashtbl.add keyword_table x y )         

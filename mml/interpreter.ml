@@ -5,7 +5,9 @@ type value =
     | VBool of bool
     | VUnit
 
-let eval_prog (prog : prog) =
+(* eval_prog: prog -> value *)
+let eval_prog (prog : prog) : value =
+  (* evali: expr -> int *)
   let rec evali (e : expr) : int =
     match e with
     | Int n -> n
@@ -17,6 +19,7 @@ let eval_prog (prog : prog) =
     | Bop (Div, e1, e2) -> evali e1 / evali e2
     | _ -> assert false
   in
+  (* evalb: expr -> bool *)
   let rec evalb (e : expr) : bool =
     match e with
     | Bool b -> b
@@ -30,6 +33,7 @@ let eval_prog (prog : prog) =
     | _ -> assert false
   in
 
+  (* eval: expr -> value *)
   let rec eval (e : expr) : value =
     match e with
     | Unit -> VUnit

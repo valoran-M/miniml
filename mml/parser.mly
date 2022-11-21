@@ -69,12 +69,13 @@ expression:
 ;
 
 %inline binop:
+    (* Opérations Arithmétiques *)
     | PLUS  { Add }
     | MINUS { Sub }
     | MOD   { Mod}
     | STAR  { Mul }
     | DIV   { Div }
-
+    (* Opérations Booléennes *)
     | EQU   { Equ }
     | NEQU  { Nequ }
     | LE    { Le }
