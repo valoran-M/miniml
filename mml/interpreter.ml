@@ -3,6 +3,7 @@ open Mml
 type value =
     | VInt of int
     | VBool of bool
+    | VUnit
 
 let eval_prog (prog : prog) =
   let rec evali (e : expr) : int =
@@ -31,6 +32,7 @@ let eval_prog (prog : prog) =
 
   let rec eval (e : expr) : value =
     match e with
+    | Unit -> VUnit
     | Bool b -> VBool b
     | ( Uop (Not, _)
       | Bop (Equ, _, _)
@@ -46,6 +48,11 @@ let eval_prog (prog : prog) =
       | Bop (Mod, _, _)
       | Bop (Mul, _, _)
       | Bop (Div, _, _) ) as op -> VInt (evali op)
+    | If (c, e1, e2) ->
+        if evalb c then
+          eval e1
+        else
+          eval e2
     | Seq (e1, e2) ->
         let _ = eval e1 in
         eval e2

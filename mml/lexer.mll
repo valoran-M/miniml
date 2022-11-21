@@ -3,12 +3,28 @@
     open Parser
 
     exception Lexing_error of string
+
+    let keyword_table = Hashtbl.create 7
+    let () =
+        List.iter (fun (x, y) -> Hashtbl.add keyword_table x y )         
+            [
+                "true", BOOL(true);
+                "false", BOOL(false);
+                "not", NOT;
+                "mod", MOD;
+                "if", IF;
+                "then", THEN;
+                "else", ELSE
+            ]
+
+    let is_keyword name = Hashtbl.mem keyword_table name
 }
 
 let digit = [ '0'-'9' ]
 let number = digit+ 
 let alpha = ['a'-'z' 'A'-'Z']
 let ident = ['a'-'z' '_'] (alpha | '_' | digit)*
+let keyword = ['a'-'z']+
 let true = "true"
 let false = "false"
 
@@ -20,12 +36,14 @@ rule pattern = parse
     | number as _number {
             CST(int_of_string _number)
         }
-    | "true"    { BOOL(true) }
-    | "false"   { BOOL(false) }
-
+    | keyword as name {
+            if is_keyword name then
+                Hashtbl.find keyword_table name
+            else
+                pattern lexbuf
+        }
     (* opérations booléennes *)
-    | "not"     { NOT }
-    | "="       { EQU }
+    | "=="       { EQU }
     | "!="      { NEQU }
     | "<"       { LT }
     | "<="      { LE }
@@ -35,7 +53,6 @@ rule pattern = parse
     (* opérations arithmétiques *)
     | "+"       { PLUS }
     | "-"       { MINUS }
-    | "mod"     { MOD }
     | "*"       { STAR }
     | "/"       { DIV }
     | ";"       { SEMI }

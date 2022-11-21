@@ -25,5 +25,6 @@ let () =
   let output_value = Interpreter.eval_prog prog in
   (match output_value with
   | VInt n -> print_int n
-  | VBool b -> print_bool b);
+  | VBool b -> print_bool b
+  | VUnit -> Printf.printf "()");
   print_newline ()
