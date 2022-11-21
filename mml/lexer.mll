@@ -32,6 +32,7 @@ let false = "false"
 rule pattern = parse
     | ['\n']            { pattern lexbuf }
     | [' ' '\t' '\r']+  { pattern lexbuf }
+    | "()"              { UNIT }
     | "(*"              {comment lexbuf; pattern lexbuf}
     | number as _number {
             CST(int_of_string _number)
@@ -40,10 +41,11 @@ rule pattern = parse
             if is_keyword name then
                 Hashtbl.find keyword_table name
             else
-                pattern lexbuf
+                IDENT(name)
         }
+    | ident as name     { IDENT(name) }
     (* opérations booléennes *)
-    | "=="       { EQU }
+    | "=="      { EQU }
     | "!="      { NEQU }
     | "<"       { LT }
     | "<="      { LE }

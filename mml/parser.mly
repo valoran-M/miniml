@@ -2,12 +2,16 @@
     open Mml
 %}
 
-(* Expressions booléennes *)
+(* Types *)
+%token <string> IDENT
 %token <bool> BOOL
+%token <int> CST
+%token UNIT
+
+(* Expressions booléennes *)
 %token NOT EQU NEQU LT LE AND OR
 
 (* Expressions arithmétiques *)
-%token <int> CST
 %token STAR PLUS MINUS DIV MOD
 
 (* Condition *)
@@ -44,6 +48,8 @@ program:
 simple_expression:
     | n=CST                     { Int n }
     | b=BOOL                    { Bool b }
+    | UNIT                      { Unit }
+    | id=IDENT                  { Var(id) }
     | S_PAR e=expression E_PAR  { e } 
 ;
 

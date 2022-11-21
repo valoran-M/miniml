@@ -16,6 +16,7 @@ type expr =
     | Int   of int
     | Bool  of bool
     | Unit
+    | Var   of string
     | Uop   of uop * expr 
     | Bop   of bop * expr * expr
     | If    of expr * expr * expr

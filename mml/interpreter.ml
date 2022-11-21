@@ -33,6 +33,7 @@ let eval_prog (prog : prog) =
   let rec eval (e : expr) : value =
     match e with
     | Unit -> VUnit
+    | Var _ -> assert false (* à compléter *)
     | Bool b -> VBool b
     | ( Uop (Not, _)
       | Bop (Equ, _, _)
