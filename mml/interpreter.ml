@@ -19,6 +19,7 @@ let eval_prog (prog : prog) : value =
     | Bop (Div, e1, e2) -> evali e1 / evali e2
     | _ -> assert false
   in
+
   (* evalb: expr -> bool *)
   let rec evalb (e : expr) : bool =
     match e with
@@ -38,6 +39,9 @@ let eval_prog (prog : prog) : value =
     match e with
     | Unit -> VUnit
     | Var _ -> assert false (* à compléter *)
+    | Fun (_, _, _) -> assert false (* à compléter *)
+    | Let (_, _, _) -> assert false (* à compléter *)
+    | App (_, _) -> assert false (*à compléter *)
     | Bool b -> VBool b
     | ( Uop (Not, _)
       | Bop (Equ, _, _)
