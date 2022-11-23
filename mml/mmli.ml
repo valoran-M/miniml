@@ -1,5 +1,3 @@
-open Format
-
 let usage = "usage: ./mmli file.mml"
 let spec = []
 
@@ -23,8 +21,4 @@ let () =
   let prog = Parser.program Lexer.pattern lb in
   close_in c;
   let output_value = Interpreter.eval_prog prog in
-  (match output_value with
-  | VInt n -> print_int n
-  | VBool b -> print_bool b
-  | VUnit -> Printf.printf "()");
-  print_newline ()
+  Interpreter.print_value output_value

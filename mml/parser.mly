@@ -1,5 +1,12 @@
 %{
     open Mml
+
+    let rec function_expression params expr = 
+        match params with
+        | []            -> expr
+        | (id, t) :: []       -> Fun(id, t, expr)
+        | (id, t) :: e2 :: l -> Fun(id, t, 
+                                    function_expression (e2 :: l) expr)
 %}
 
 (* Constantes et Varaibles *)
@@ -21,7 +28,8 @@
 %token IF THEN ELSE
 
 (* Autres *)
-%token SEMI S_PAR E_PAR LET SEQ IN ARROW COLON
+%token SEMI S_PAR E_PAR ARROW COLON
+%token LET REC S_EQ IN
 %token EOF
 
 %start program
@@ -81,12 +89,13 @@ expression:
     | IF c=expression THEN e=expression     { If(c, e, Unit) }
     | IF c=expression THEN e1=expression 
                       ELSE e2=expression    { If(c, e1, e2) }
-    | LET id=IDENT a=list(argument) SEQ 
+    | LET id=IDENT a=list(argument) S_EQ 
         e1=expression IN 
-        e2=expression                       { match a with
-                                               | [] ->Let(id, e1, e2) 
-                                               | _ -> Let(id, e1, e2)
-                                            }
+        e2=expression                       { Let(id, function_expression a e1, e2) }
+    | LET REC id=IDENT 
+        a=list(argument) COLON t=types S_EQ 
+        e1=expression IN 
+        e2=expression                       { Let(id, Fix("f", t, function_expression a e1), e2) }
     | e1=expression SEMI e2=expression      { Seq(e1, e2) }
 ;
 
@@ -97,16 +106,11 @@ expression:
 
 %inline binop:
     (* Opérations Arithmétiques *)
-    | PLUS  { Add }
-    | MINUS { Sub }
+    | PLUS  { Add } | MINUS { Sub }
     | MOD   { Mod}
-    | STAR  { Mul }
-    | DIV   { Div }
+    | STAR  { Mul } | DIV   { Div }
     (* Opérations Booléennes *)
-    | EQU   { Equ }
-    | NEQU  { Nequ }
-    | LE    { Le }
-    | LT    { Lt }
-    | OR    { Or }
-    | AND   { And }
+    | EQU   { Equ } | NEQU  { Nequ }
+    | LE    { Le }  | LT    { Lt }
+    | OR    { Or }  | AND   { And }
 ;

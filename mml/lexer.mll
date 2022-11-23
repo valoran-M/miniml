@@ -17,6 +17,7 @@
                 "then", THEN;
                 "else", ELSE;
                 "let", LET;
+                "rec", REC;
                 "in", IN;
                 (* Types *)
                 "int", T_INT;
@@ -39,7 +40,6 @@ let false = "false"
 rule pattern = parse
     | ['\n']            { pattern lexbuf }
     | [' ' '\t' '\r']+  { pattern lexbuf }
-    | "()"              { UNIT_P }
     | "(*"              {comment lexbuf; pattern lexbuf}
     | number as _number {
             CST(int_of_string _number)
@@ -51,9 +51,12 @@ rule pattern = parse
                 IDENT(name)
         }
     | ident as name     { IDENT(name) }
-    | "="       { SEQ }
+
+    (* symboles *)
+    | "="       { S_EQ }
     | "->"      { ARROW }
     | ":"       { COLON }
+    | "()"      { UNIT_P }
 
     (* opérations booléennes *)
     | "=="      { EQU }
