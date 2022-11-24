@@ -13,16 +13,21 @@
                 "false", BOOL(false);
                 "not", NOT;
                 "mod", MOD;
+                (* conditions *)
                 "if", IF;
                 "then", THEN;
                 "else", ELSE;
+                (* function *)
                 "let", LET;
+                "fun", FUN;
                 "rec", REC;
                 "in", IN;
                 (* Types *)
                 "int", T_INT;
                 "bool", T_BOOL;
-                "unit", T_UNIT
+                "unit", T_UNIT;
+                "type", TYPE;
+                "mutable", MUTABLE
             ]
 
     let is_keyword name = Hashtbl.mem keyword_table name
@@ -50,13 +55,16 @@ rule pattern = parse
             else
                 IDENT(name)
         }
-    | ident as name     { IDENT(name) }
+    | ident as name     { Printf.printf "%s " name; IDENT(name) }
 
     (* symboles *)
     | "="       { S_EQ }
-    | "->"      { ARROW }
+    | "->"      { R_ARROW }
     | ":"       { COLON }
     | "()"      { UNIT_P }
+    | ";"       { SEMI }
+    | "."       { DOT }
+
 
     (* opérations booléennes *)
     | "=="      { EQU }
@@ -71,9 +79,12 @@ rule pattern = parse
     | "-"       { MINUS }
     | "*"       { STAR }
     | "/"       { DIV }
-    | ";"       { SEMI }
+
+    (* PAR et BRACE *)
     | "("       { S_PAR }
     | ")"       { E_PAR }
+    | "{"       { S_BRACE }
+    | "}"       { E_BRACE }
     | eof       { EOF }
 
 and comment = parse

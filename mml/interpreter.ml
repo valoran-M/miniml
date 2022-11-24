@@ -5,21 +5,21 @@ module Env = Map.Make (String)
 
 (* Valeurs *)
 type value =
-    | VInt of int
+    | VInt  of int
     | VBool of bool
     | VUnit
-    | VPtr of int
+    | VPtr  of int
 
 let print_value = function
-  | VInt n -> Printf.printf "%d\n" n
+  | VInt n  -> Printf.printf "%d\n" n
   | VBool b -> Printf.printf "%b\n" b
-  | VUnit -> Printf.printf "()\n"
-  | VPtr p -> Printf.printf "@%d\n" p
+  | VUnit   -> Printf.printf "()\n"
+  | VPtr p  -> Printf.printf "@%d\n" p
 
 (* Élements du tas *)
 type heap_value =
-    | VClos of string * expr * value Env.t
-    | VStrct of (string, value) Hashtbl.t
+    | VClos   of string * expr * value Env.t
+    | VStrct  of (string, value) Hashtbl.t
 
 (* Interprétation d'un programme complet *)
 let eval_prog (prog : prog) : value =
@@ -74,6 +74,8 @@ let eval_prog (prog : prog) : value =
           eval e1 env
         else
           eval e2 env
+    | Strct _ -> assert false (* à compléter *)
+    | GetF _ -> assert false (* à compléter *)
     | Seq (e1, e2) ->
         let _ = eval e1 env in
         eval e2 env

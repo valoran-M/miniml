@@ -3,9 +3,11 @@ type typ =
     | TBool
     | TUnit
     | TFun of typ * typ
+    | TStrct of string
 
-type uop =
-    | Neg   | Not
+type strct = (string * typ * bool) list
+
+type uop = Neg | Not
 
 type bop =
     (* opérations arithmétiques *)
@@ -23,12 +25,17 @@ type expr =
     | Unit
     | Uop of uop * expr
     | Bop of bop * expr * expr
-    | If of expr * expr * expr
-    | Seq of expr * expr
     | Var of string
-    | Fun of string * typ * expr
+    | If of expr * expr * expr
     | Let of string * expr * expr
+    | Fun of string * typ * expr
     | App of expr * expr
-    | Fix   of string * typ * expr
+    | Fix of string * typ * expr
+    | Strct of (string * expr) list
+    | GetF  of expr * string
+    | Seq of expr * expr
 
-type prog = { code : expr }
+type prog = {
+    types : (string * strct) list;
+    code : expr;
+  }

@@ -1,23 +1,46 @@
 open Format
 open Mml
 
-let uop_to_string = function
-  | Neg -> "-"  | Not -> "not "
-
-let bop_to_string = function
-  | Add -> "+"  | Sub -> "-"
-  | Mul -> "*"  | Div -> "/"
-  | Mod -> "mod"
-  | Equ -> "==" | Nequ -> "!="
-  | Lt -> "<"   | Le -> "<="
-  | And -> "&&" | Or -> "||"
-
 let rec typ_to_string = function
   | TInt -> "int"
   | TBool -> "bool"
   | TUnit -> "unit"
   | TFun (typ1, typ2) ->
       Printf.sprintf "(%s) -> %s" (typ_to_string typ1) (typ_to_string typ2)
+  | TStrct s -> s
+
+let rec print_fields ppf = function
+  | [] -> fprintf ppf ""
+  | (x, t, m) :: l ->
+      let mut =
+        if m then
+          "mutable "
+        else
+          ""
+      in
+      fprintf ppf "%s %s: %s;@ %a" mut x (typ_to_string t) print_fields l
+
+let rec print_types ppf = function
+  | [] -> fprintf ppf "@."
+  | (t, s) :: l ->
+      fprintf ppf "type %s = { @[%a}@]@.%a" t print_fields s print_types l
+
+let uop_to_string = function
+  | Neg -> "-"
+  | Not -> "not "
+
+let bop_to_string = function
+  | Add -> "+"
+  | Sub -> "-"
+  | Mul -> "*"
+  | Div -> "/"
+  | Mod -> "mod"
+  | Equ -> "=="
+  | Nequ -> "!="
+  | Lt -> "<"
+  | Le -> "<="
+  | And -> "&&"
+  | Or -> "||"
 
 let rec print_expr ppf = function
   | Int n -> fprintf ppf "%i" n
@@ -38,6 +61,14 @@ let rec print_expr ppf = function
       fprintf ppf "@[if %a then@. @[<hv 2>%a@]@ else @[<hv 2>%a@]@]" print_expr
         c print_expr e1 print_expr e2
   | Seq (e1, e2) -> fprintf ppf "@[<v>%a;@ %a@]" print_expr e1 print_expr e2
-  | Fix(x, t, e) -> fprintf ppf "fix (%s: %s) = (%a)" x (typ_to_string t) print_expr e
+  | Strct l -> fprintf ppf "{ @[%a}@]" print_defs l
+  | GetF(e, x) -> fprintf ppf "(%a).%s" print_expr e x
+  | Fix (x, t, e) ->
+      fprintf ppf "fix (%s: %s) = (%a)" x (typ_to_string t) print_expr e
 
-let print_prog ppf prog = fprintf ppf "%a@." print_expr prog.code
+and print_defs ppf = function
+  | [] -> fprintf ppf ""
+  | (x, e) :: l -> fprintf ppf "%s = %a; %a" x print_expr e print_defs l
+
+let print_prog ppf prog =
+  fprintf ppf "%a@.%a@." print_types prog.types print_expr prog.code
