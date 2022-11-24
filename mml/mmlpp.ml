@@ -63,6 +63,7 @@ let rec print_expr ppf = function
   | Seq (e1, e2) -> fprintf ppf "@[<v>%a;@ %a@]" print_expr e1 print_expr e2
   | Strct l -> fprintf ppf "{ @[%a}@]" print_defs l
   | GetF(e, x) -> fprintf ppf "(%a).%s" print_expr e x
+  | SetF(e1, x, e2) -> fprintf ppf "(%a).%s <- %a" print_expr e1 x print_expr e2
   | Fix (x, t, e) ->
       fprintf ppf "fix (%s: %s) = (%a)" x (typ_to_string t) print_expr e
 

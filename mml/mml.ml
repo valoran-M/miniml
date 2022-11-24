@@ -33,6 +33,7 @@ type expr =
     | Fix of string * typ * expr
     | Strct of (string * expr) list
     | GetF  of expr * string
+    | SetF  of expr * string * expr
     | Seq of expr * expr
 
 type prog = {

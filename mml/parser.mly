@@ -27,7 +27,7 @@
 %token IF THEN ELSE
 
 (* Autres *)
-%token SEMI COLON R_ARROW DOT
+%token SEMI COLON R_ARROW L_ARROW DOT
 %token S_PAR E_PAR S_BRACE E_BRACE
 %token LET FUN REC S_EQ IN
 %token EOF
@@ -38,7 +38,7 @@
 
 (* Prioritées *)
 %nonassoc IN
-%right R_ARROW
+%right R_ARROW 
 
 %left EQU NEQU 
 %left LT LE
@@ -55,6 +55,7 @@
 %nonassoc THEN
 %nonassoc ELSE
 %left SEMI
+%nonassoc L_ARROW
 
 %%
 
@@ -113,6 +114,8 @@ expression:
         COLON t=types S_EQ 
         e1=expression IN 
         e2=expression                       { Let(id, Fix("f", t, mk_fun a e1), e2) }
+    | e1=simple_expression DOT id=IDENT 
+        L_ARROW e2=expression               { SetF(e1, id, e2) }
     | e1=expression SEMI e2=expression      { Seq(e1, e2) }
 ;
 

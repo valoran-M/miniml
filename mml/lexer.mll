@@ -60,6 +60,7 @@ rule pattern = parse
     (* symboles *)
     | "="       { S_EQ }
     | "->"      { R_ARROW }
+    | "<-"      { L_ARROW }
     | ":"       { COLON }
     | "()"      { UNIT_P }
     | ";"       { SEMI }

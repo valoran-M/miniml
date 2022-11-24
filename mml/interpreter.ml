@@ -76,6 +76,7 @@ let eval_prog (prog : prog) : value =
           eval e2 env
     | Strct _ -> assert false (* à compléter *)
     | GetF _ -> assert false (* à compléter *)
+    | SetF _ -> assert false (* à compléter *)
     | Seq (e1, e2) ->
         let _ = eval e1 env in
         eval e2 env
