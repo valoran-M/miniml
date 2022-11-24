@@ -5,21 +5,21 @@ module Env = Map.Make (String)
 
 (* Valeurs *)
 type value =
-    | VInt  of int
+    | VInt of int
     | VBool of bool
     | VUnit
-    | VPtr  of int
+    | VPtr of int
 
 let print_value = function
-  | VInt n  -> Printf.printf "%d\n" n
+  | VInt n -> Printf.printf "%d\n" n
   | VBool b -> Printf.printf "%b\n" b
-  | VUnit   -> Printf.printf "()\n"
-  | VPtr p  -> Printf.printf "@%d\n" p
+  | VUnit -> Printf.printf "()\n"
+  | VPtr p -> Printf.printf "@%d\n" p
 
 (* Élements du tas *)
 type heap_value =
-    | VClos   of string * expr * value Env.t
-    | VStrct  of (string, value) Hashtbl.t
+    | VClos of string * expr * value Env.t
+    | VStrct of (string, value) Hashtbl.t
 
 (* Interprétation d'un programme complet *)
 let eval_prog (prog : prog) : value =
@@ -32,6 +32,12 @@ let eval_prog (prog : prog) : value =
     fun () ->
       incr cpt;
       !cpt
+  in
+
+  let find_struct a =
+    match Hashtbl.find mem a with
+    | VStrct s -> s
+    | _ -> assert false
   in
 
   (* Interprétation d'une expression, en fonction d'un environnement
@@ -74,9 +80,22 @@ let eval_prog (prog : prog) : value =
           eval e1 env
         else
           eval e2 env
-    | Strct _ -> assert false (* à compléter *)
-    | GetF _ -> assert false (* à compléter *)
-    | SetF _ -> assert false (* à compléter *)
+    | Strct s ->
+        let ptr = new_ptr () in
+        Hashtbl.add mem ptr (create_struct s env);
+        VPtr ptr
+    | GetF (e, id) -> (
+        match eval e env with
+        | VPtr a -> Hashtbl.find (find_struct a) id
+        | _ -> assert false)
+    | SetF (e1, id, e2) -> (
+        let new_val = eval e2 env in
+        match eval e1 env with
+        | VPtr a ->
+            let s = find_struct a in
+            Hashtbl.replace s id new_val;
+            Hashtbl.find s id
+        | _ -> assert false)
     | Seq (e1, e2) ->
         let _ = eval e1 env in
         eval e2 env
@@ -109,5 +128,11 @@ let eval_prog (prog : prog) : value =
         match eval e env with
         | VBool b -> b
         | _ -> assert false)
+  (* Création de la hastable pour une structure *)
+  and create_struct (s : (string * expr) list) env : heap_value =
+    let data = Hashtbl.create (List.length s) in
+    List.iter (fun (id, valeur) -> Hashtbl.add data id (eval valeur env)) s;
+    VStrct data
   in
+
   eval prog.code Env.empty

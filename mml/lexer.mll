@@ -11,6 +11,7 @@
             [
                 "true", BOOL(true);
                 "false", BOOL(false);
+                (* calcule *)
                 "not", NOT;
                 "mod", MOD;
                 (* conditions *)
@@ -56,7 +57,6 @@ rule pattern = parse
                 IDENT(name)
         }
     | ident as name     { Printf.printf "%s " name; IDENT(name) }
-
     (* symboles *)
     | "="       { S_EQ }
     | "->"      { R_ARROW }
@@ -65,8 +65,6 @@ rule pattern = parse
     | "()"      { UNIT_P }
     | ";"       { SEMI }
     | "."       { DOT }
-
-
     (* opérations booléennes *)
     | "=="      { EQU }
     | "!="      { NEQU }
@@ -74,13 +72,11 @@ rule pattern = parse
     | "<="      { LE }
     | "&&"      { AND }
     | "||"      { OR }
-
     (* opérations arithmétiques *)
     | "+"       { PLUS }
     | "-"       { MINUS }
     | "*"       { STAR }
     | "/"       { DIV }
-
     (* PAR et BRACE *)
     | "("       { S_PAR }
     | ")"       { E_PAR }
