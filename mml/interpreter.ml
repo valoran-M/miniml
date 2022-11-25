@@ -60,21 +60,14 @@ let eval_prog (prog : prog) : value =
             | _ -> assert false)
         | _ -> assert false)
     | Fix (_, _, _) -> assert false (*à compléter *)
+    (* Opération Booléenne *)
     | Bool b -> VBool b
-    | ( Uop (Not, _)
-      | Bop (Equ, _, _)
-      | Bop (Nequ, _, _)
-      | Bop (Le, _, _)
-      | Bop (Lt, _, _)
-      | Bop (Or, _, _)
-      | Bop (And, _, _) ) as op -> VBool (evalb op env)
+    | (Uop (Not, _) | Bop ((Equ | Nequ | Le | Lt | Or | And), _, _)) as op ->
+        VBool (evalb op env)
+    (* Opération Arithmétique *)
     | Int n -> VInt n
-    | ( Uop (Neg, _)
-      | Bop (Add, _, _)
-      | Bop (Sub, _, _)
-      | Bop (Mod, _, _)
-      | Bop (Mul, _, _)
-      | Bop (Div, _, _) ) as op -> VInt (evali op env)
+    | (Uop (Neg, _) | Bop ((Add | Sub | Mod | Mul | Div), _, _)) as op ->
+        VInt (evali op env)
     | If (c, e1, e2) ->
         if evalb c env then
           eval e1 env
@@ -94,7 +87,7 @@ let eval_prog (prog : prog) : value =
         | VPtr a ->
             let s = find_struct a in
             Hashtbl.replace s id new_val;
-            Hashtbl.find s id
+            VUnit
         | _ -> assert false)
     | Seq (e1, e2) ->
         let _ = eval e1 env in
@@ -118,7 +111,7 @@ let eval_prog (prog : prog) : value =
     match e with
     | Bool b -> b
     | Uop (Not, e) -> not (evalb e env)
-    | Bop (Equ, e1, e2) -> evali e1 env == evali e2 env
+    | Bop (Equ, e1, e2) -> eval e1 env = eval e2 env (* à revoir *)
     | Bop (Nequ, e1, e2) -> evali e1 env != evali e2 env
     | Bop (Le, e1, e2) -> evali e1 env <= evali e2 env
     | Bop (Lt, e1, e2) -> evali e1 env < evali e2 env
