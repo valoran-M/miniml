@@ -92,7 +92,7 @@ let eval_prog (prog : prog) : value =
     match e with
     | Bool b              -> b
     | Uop (Not, e)        -> not (evalb e env)
-    | Bop (Equ, e1, e2)   -> eval e1 env = eval e2 env (* à revoir *)
+    | Bop (Equ, e1, e2)   -> eval e1 env = eval e2 env
     | Bop (Nequ, e1, e2)  -> evali e1 env != evali e2 env
     | Bop (Le, e1, e2)    -> evali e1 env <= evali e2 env
     | Bop (Lt, e1, e2)    -> evali e1 env < evali e2 env
