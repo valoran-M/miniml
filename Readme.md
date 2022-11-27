@@ -42,4 +42,4 @@ Les expressions sont les suivantes :
 |   Variables  |     X    |     X     |      X      |      X      |
 |   Fonctions  |     X    |     X     |      X      |      X      |
 |  Structures  |     X    |     X     |      X      |      X      |
-|   Récursion  |     X    |     X     |      X      |             |
+|   Récursion  |     X    |     X     |      X      |      X      |
