@@ -47,16 +47,20 @@ let eval_prog (prog : prog) : value =
       et de la mémoire globale *)
   let rec eval (e : expr) (env : value Env.t) : value =
     match e with
-    | Unit      -> VUnit
-    | Var id    -> Env.find id env
+    | Unit            -> VUnit
+    | Var id          -> Env.find id env
     (* Opération Booléenne *)
-    | Bool b -> VBool b
-    | (Uop (Not, _) | Bop ((Equ | Nequ | Le | Lt | Or | And), _, _)) as op ->
-        VBool (evalb op env)
+    | Bool b          -> VBool b
+    | (Uop (Not, _) 
+    | Bop ((Equ | Nequ 
+          | Le | Lt 
+          | Or | And), _, _)) as op   -> VBool (evalb op env)
     (* Opération Arithmétique *)
-    | Int n -> VInt n
-    | (Uop (Neg, _) | Bop ((Add | Sub | Mod | Mul | Div), _, _)) as op ->
-        VInt (evali op env)
+    | Int n           -> VInt n
+    | (Uop (Neg, _) 
+    | Bop ((Add | Sub 
+          | Mod 
+          | Mul | Div), _, _)) as op  -> VInt (evali op env)
     (* Fonction *)
     | Fun (id, _, e)      -> eval_fun id e env
     | Let (id, e1, e2)    -> eval e2 (Env.add id (eval e1 env) env)
