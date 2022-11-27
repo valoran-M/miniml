@@ -1,16 +1,16 @@
 open Mml
 
-(** Environnement : associe des valeurs à des noms de variables *)
+(* Environnement : associe des valeurs à des noms de variables *)
 module Env = Map.Make (String)
 
-(*** Valeurs *)
+(* Valeurs *)
 type value =
     | VInt of int
     | VBool of bool
     | VUnit
     | VPtr of int
 
-(** Affiche les valeurs retourner par eval_prog *)
+(* Affiche les valeurs retourner par eval_prog *)
 let print_value = function
   | VInt n -> Printf.printf "%d\n" n
   | VBool b -> Printf.printf "%b\n" b
@@ -22,12 +22,12 @@ type heap_value =
     | VClos of string * expr * value Env.t
     | VStrct of (string, value) Hashtbl.t
 
-(** Interprète un programme *)
+(* Interprète un programme *)
 let eval_prog (prog : prog) : value =
   (* Initialisation de la mémoire globale *)
   let (mem : (int, heap_value) Hashtbl.t) = Hashtbl.create 16 in
 
-  (** Création de nouvelles adresses *)
+  (* Création de nouvelles adresses *)
   let new_ptr =
     let cpt = ref 0 in
     fun () ->
@@ -35,7 +35,7 @@ let eval_prog (prog : prog) : value =
       !cpt
   in
 
-  (** rend une strucutre ou si elle n'existe pas 
+  (* rend une strucutre ou si elle n'existe pas 
       déclanche une erreur *)
   let find_struct a =
     match Hashtbl.find mem a with
@@ -43,7 +43,7 @@ let eval_prog (prog : prog) : value =
     | _ -> assert false
   in
 
-  (** Interprétation d'une expression, en fonction d'un environnement
+  (* Interprétation d'une expression, en fonction d'un environnement
       et de la mémoire globale *)
   let rec eval (e : expr) (env : value Env.t) : value =
     match e with
@@ -69,7 +69,7 @@ let eval_prog (prog : prog) : value =
     (* Autres *)
     | If (c, e1, e2)      -> if evalb c env then eval e1 env else eval e2 env
     | Seq (e1, e2)        -> let _ = eval e1 env in eval e2 env
-  (** Évaluation d'une expression dont la valeur est supposée entière *)
+  (* Évaluation d'une expression dont la valeur est supposée entière *)
   and evali (e : expr) (env : value Env.t) : int =
     match e with
     | Int n             -> n
@@ -83,7 +83,7 @@ let eval_prog (prog : prog) : value =
         match eval e env with
         | VInt n -> n
         | _ -> assert false)
-  (** Évaluation d'une expression dont la valeur est supposée booléenne *)
+  (* Évaluation d'une expression dont la valeur est supposée booléenne *)
   and evalb (e : expr) (env : value Env.t) : bool =
     match e with
     | Bool b              -> b
@@ -98,12 +98,12 @@ let eval_prog (prog : prog) : value =
         match eval e env with
         | VBool b -> b
         | _ -> assert false)
-  (** eval fun x -> e *)
+  (* eval fun x -> e *)
   and eval_fun id e env =
     let ptr = new_ptr () in
     Hashtbl.add mem ptr (VClos (id, e, env));
     VPtr ptr
-  (** eval e1 e2 *)
+  (* eval e1 e2 *)
   and eval_app e1 e2 env =
     let val_e2 = eval e2 env in
     match eval e1 env with
@@ -112,7 +112,7 @@ let eval_prog (prog : prog) : value =
         | VClos (id, e, env) -> eval e (Env.add id val_e2 env)
         | _ -> assert false)
     | _ -> assert false
-  (** eval e2.id <- e2 *)
+  (* eval e2.id <- e2 *)
   and eval_setf e1 id e2 env : value =
     let new_val = eval e2 env in
     match eval e1 env with
@@ -121,12 +121,12 @@ let eval_prog (prog : prog) : value =
         Hashtbl.replace s id new_val;
         VUnit
     | _ -> assert false
-  (** eval e.id *)
+  (* eval e.id *)
   and eval_getf e id env : value =
     match eval e env with
     | VPtr a -> Hashtbl.find (find_struct a) id
     | _ -> assert false
-  (** eval {a1 = e1; ... an = en; } *)
+  (* eval {a1 = e1; ... an = en; } *)
   and create_struct (s : (string * expr) list) env : value =
     let data = Hashtbl.create (List.length s) in
     List.iter (fun (id, valeur) -> Hashtbl.add data id (eval valeur env)) s;
