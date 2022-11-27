@@ -30,7 +30,10 @@ let () =
   try
     let prog = Parser.program Lexer.pattern lb in
     close_in c;
+    Printf.printf "OK\n";
     ignore (Typechecker.type_prog prog);
+    Printf.printf "OK\n";
+
     let output_value = Interpreter.eval_prog prog in
     Interpreter.print_value output_value
   with

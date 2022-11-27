@@ -5,6 +5,11 @@
         match params with
         | []            -> expr
         | (id, t) :: l  -> Fun(id, t, mk_fun l expr)
+
+    let rec mk_fun_type xs t = 
+        match xs with
+        | [] -> t
+        | (_, t')::xs -> TFun(t', mk_fun_type xs t)
 %}
 
 (* Constantes et Varaibles *)
@@ -38,6 +43,8 @@
 
 (* Prioritées *)
 %nonassoc IN
+%left SEMI
+%nonassoc L_ARROW
 %right R_ARROW 
 %nonassoc THEN
 %nonassoc ELSE
@@ -54,8 +61,6 @@
 %nonassoc NOT
 %nonassoc S_PAR S_BRACE 
 %nonassoc UNIT_P IDENT CST BOOL
-%left SEMI
-%nonassoc L_ARROW
 
 %%
 
@@ -113,7 +118,11 @@ expression:
     | LET REC id=IDENT a=list(fun_argument) 
         COLON t=types S_EQ 
         e1=expression IN 
-        e2=expression                       { Let(id, Fix("f", t, mk_fun a e1), e2) }
+        e2=expression                       { 
+                                                Let(id, Fix(id, 
+                                                            mk_fun_type a t,
+                                                            mk_fun a e1), e2) 
+                                            }
     | e1=simple_expression DOT id=IDENT 
         L_ARROW e2=expression               { SetF(e1, id, e2) }
     | e1=expression SEMI e2=expression      { Seq(e1, e2) }

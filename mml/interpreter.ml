@@ -65,7 +65,7 @@ let eval_prog (prog : prog) : value =
     | Fun (id, _, e)      -> eval_fun id e env
     | Let (id, e1, e2)    -> eval e2 (Env.add id (eval e1 env) env)
     | App (e1, e2)        -> eval_app e1 e2 env
-    | Fix (_, _, _)       -> assert false (*à compléter *)
+    | Fix (id, _, e)      -> eval_fix id e env
     (* struct *)
     | Strct s             -> create_struct s env
     | GetF (e, id)        -> eval_getf e id env
@@ -102,7 +102,7 @@ let eval_prog (prog : prog) : value =
         match eval e env with
         | VBool b -> b
         | _ -> assert false)
-  (* eval fun x -> e *)
+  (* eval fun id -> e *)
   and eval_fun id e env =
     let ptr = new_ptr () in
     Hashtbl.add mem ptr (VClos (id, e, env));
@@ -116,6 +116,15 @@ let eval_prog (prog : prog) : value =
         | VClos (id, e, env) -> eval e (Env.add id val_e2 env)
         | _ -> assert false)
     | _ -> assert false
+  (* eval Fix(id, t, e) *)
+  and eval_fix id e env =
+    match e with
+    | Fun(f, _, e) -> 
+        let ptr = new_ptr () in
+        Hashtbl.add mem ptr (VClos (f, e, Env.add id (VPtr ptr) env));
+        VPtr ptr
+    | Strct _ -> assert false
+   | _ -> assert false
   (* eval e2.id <- e2 *)
   and eval_setf e1 id e2 env : value =
     let new_val = eval e2 env in
