@@ -4,7 +4,7 @@ Le Mini-Ml est un sous ensemble de ML, il est composé de 2 parties :
 1. Les types
 2. Les expressions
 
-### Les types
+## Les types
 
 Les types sont les suivants :
 - `int` : les entiers
@@ -12,7 +12,7 @@ Les types sont les suivants :
 - `unit` : l'unité
 - `typedef s = {...}` : les structures définis par l'utilisateur
 
-### Les expressions
+## Les expressions
 
 Les expressions sont les suivantes :
 - `n` : un entier
@@ -34,4 +34,12 @@ Les expressions sont les suivantes :
 
 
 
-# 
+# Avancée
+
+|              | mmllexer | mmlparser | typechecker | interpreter |
+|:------------:|:--------:|:---------:|:-----------:|:-----------:|
+| Arithmétique |     X    |     X     |      X      |      X      |
+|   Variables  |     X    |     X     |      X      |      X      |
+|   Fonctions  |     X    |     X     |      X      |      X      |
+|  Structures  |     X    |     X     |      X      |      X      |
+|   Récursion  |     X    |     X     |      X      |             |
