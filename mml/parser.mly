@@ -43,12 +43,11 @@
 
 (* Prioritées *)
 %nonassoc IN
+%left SEMI
 %nonassoc L_ARROW
 %nonassoc R_ARROW 
 %nonassoc THEN
 %nonassoc ELSE
-
-%left SEMI
 
 %left EQU NEQU 
 %left LT LE
