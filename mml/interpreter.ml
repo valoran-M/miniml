@@ -5,17 +5,17 @@ module Env = Map.Make (String)
 
 (* Valeurs *)
 type value =
-    | VInt of int
+    | VInt  of int
     | VBool of bool
     | VUnit
-    | VPtr of int
+    | VPtr  of int
 
 (* Affiche les valeurs retourner par eval_prog *)
 let print_value = function
-  | VInt n -> Printf.printf "%d\n" n
+  | VInt n  -> Printf.printf "%d\n" n
   | VBool b -> Printf.printf "%b\n" b
-  | VUnit -> Printf.printf "()\n"
-  | VPtr p -> Printf.printf "@%d\n" p
+  | VUnit   -> Printf.printf "()\n"
+  | VPtr p  -> Printf.printf "@%d\n" p
 
 (* Élements du tas *)
 type heap_value =
