@@ -43,6 +43,7 @@
 
 (* Prioritées *)
 %nonassoc IN
+%nonassoc UNIT_P IDENT CST BOOL
 %left SEMI
 %nonassoc L_ARROW
 %nonassoc R_ARROW 
@@ -60,7 +61,6 @@
 %left AND
 %nonassoc NOT
 %nonassoc S_PAR S_BRACE 
-%nonassoc UNIT_P IDENT CST BOOL
 
 
 %%
