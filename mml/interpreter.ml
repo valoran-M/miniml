@@ -123,7 +123,12 @@ let eval_prog (prog : prog) : value =
         let ptr = new_ptr () in
         Hashtbl.add mem ptr (VClos (f, e, Env.add id (VPtr ptr) env));
         VPtr ptr
-    | Strct _ -> assert false
+    | Strct struct_list ->
+        let ptr = new_ptr () in
+        let struct_content = Hashtbl.create (List.length struct_list) in
+        Hashtbl.add mem ptr (VStrct struct_content);
+        List.iter (fun (field, valeur) -> (Hashtbl.add struct_content field (eval valeur (Env.add id (VPtr ptr) env) )) ) struct_list;
+        VPtr ptr
     | _ -> assert false
   (* eval e2.id <- e2 *)
   and eval_setf e1 id e2 env : value =
