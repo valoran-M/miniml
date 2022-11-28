@@ -43,11 +43,12 @@
 
 (* Prioritées *)
 %nonassoc IN
-%left SEMI
 %nonassoc L_ARROW
-%right R_ARROW 
+%nonassoc R_ARROW 
 %nonassoc THEN
 %nonassoc ELSE
+
+%left SEMI
 
 %left EQU NEQU 
 %left LT LE
@@ -61,6 +62,7 @@
 %nonassoc NOT
 %nonassoc S_PAR S_BRACE 
 %nonassoc UNIT_P IDENT CST BOOL
+
 
 %%
 

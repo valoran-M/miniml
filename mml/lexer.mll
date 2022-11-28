@@ -56,7 +56,7 @@ rule pattern = parse
             else
                 IDENT(name)
         }
-    | ident as name     { Printf.printf "%s " name; IDENT(name) }
+    | ident as name     { IDENT(name) }
     (* symboles *)
     | "="       { S_EQ }
     | "->"      { R_ARROW }

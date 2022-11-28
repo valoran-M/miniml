@@ -124,7 +124,7 @@ let eval_prog (prog : prog) : value =
         Hashtbl.add mem ptr (VClos (f, e, Env.add id (VPtr ptr) env));
         VPtr ptr
     | Strct _ -> assert false
-   | _ -> assert false
+    | _ -> assert false
   (* eval e2.id <- e2 *)
   and eval_setf e1 id e2 env : value =
     let new_val = eval e2 env in
