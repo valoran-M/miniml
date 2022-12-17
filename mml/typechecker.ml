@@ -29,7 +29,21 @@ let struct_construct_error l =
 
 (* Vérification des types d'un programme *)
 let type_prog prog =
-  let get_struct name = snd (List.find (fun (id, _) -> name = id) prog.types) in
+  let get_type_def name =
+    snd (List.find (fun (id, _) -> name = id) prog.types)
+  in
+
+  let get_struct name =
+    match get_type_def name with
+    | StrctDef s -> s
+    | _ -> assert false
+  in
+
+  (* let get_enum name = *)
+  (*   match get_type_def name with *)
+  (*   | EnumDef e -> e *)
+  (*   | _ -> assert false *)
+  (* in *)
 
   (* Vérifie que l'expression [e] a le type [type] *)
   let rec check e typ tenv =
@@ -89,7 +103,8 @@ let type_prog prog =
           | [] ->
               struct_construct_error
                 (List.map (fun (n, e) -> (n, type_expr e tenv)) l)
-          | (name, s) :: ld -> (
+          | (_, EnumDef _) :: ld -> stuct_construct ld
+          | (name, StrctDef s) :: ld -> (
               let rec iter_args = function
                 | (id1, e) :: l1, (id2, t, _) :: l2 ->
                     if id1 = id2 then

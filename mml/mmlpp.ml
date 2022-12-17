@@ -20,10 +20,16 @@ let rec print_fields ppf = function
       in
       fprintf ppf "%s %s: %s;@ %a" mut x (typ_to_string t) print_fields l
 
+let rec print_enum ppf = function
+  | [] -> fprintf ppf ""
+  | s::l -> fprintf ppf "| %s @. %a" s print_enum l
+
 let rec print_types ppf = function
   | [] -> fprintf ppf "@."
-  | (t, s) :: l ->
+  | (t, StrctDef s) :: l ->
       fprintf ppf "type %s = { @[%a}@]@.%a" t print_fields s print_types l
+  | (t, EnumDef e) :: l ->
+      fprintf ppf "type %s = @[%a@]@.%a" t print_enum e print_types l
 
 let uop_to_string = function
   | Neg -> "-"

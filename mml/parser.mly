@@ -75,7 +75,7 @@ stuct_types:
 ;
 typdes_def:
     | TYPE id=IDENT S_EQ 
-        S_BRACE a=nonempty_list(stuct_types) E_BRACE     { (id, a) }
+        S_BRACE a=nonempty_list(stuct_types) E_BRACE     { (id, StrctDef a) }
 
 types:
     | T_INT                     { TInt }
@@ -111,7 +111,7 @@ expression:
     | IF c=expression THEN e1=expression 
                       ELSE e2=expression    { If(c, e1, e2) }
     | FUN a=fun_argument 
-        R_ARROW e=expression                {Fun(fst a, snd a, e) }
+        R_ARROW e=expression                { Fun(fst a, snd a, e) }
     | LET id=IDENT 
         a=list(fun_argument) S_EQ 
         e1=expression IN 
