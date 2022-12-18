@@ -20,17 +20,19 @@ let type_inference prog =
 
   let subst = Hashtbl.create 32 in
 
+  (** récupère un type défini avec son nom *)
   let get_type_def name =
     snd (List.find (fun (id, _) -> name = id) prog.types)
   in
-
+  
+  (** récupère la structure avec son nom *)
   let get_struct_with_name name =
     match get_type_def name with
     | StrctDef s -> s
     | _ -> assert false
   in
 
-  (* récupère la dernière structure posséder un paramètre appelé "id" *)
+  (** récupère la dernière structure posséder un paramètre appelé "id" *)
   let get_struct_args x =
     let rec aux = function
       | [] -> Mmlerror.struct_no_field x
@@ -79,15 +81,17 @@ let type_inference prog =
     | TVar a, TVar b when a = b -> ()
     | TVar a, t | t, TVar a ->
         if occur a t then
-          failwith
-            (Printf.sprintf "unification error %s %s" (Mmlpp.typ_to_string t1)
-               (Mmlpp.typ_to_string t2))
+          Mmlerror.error
+            (Printf.sprintf "unification error %s %s" 
+              (Mmlpp.typ_to_string t1)
+              (Mmlpp.typ_to_string t2))
         else
           Hashtbl.add subst a t
-    | _, _ ->
-        failwith
-          (Printf.sprintf "unification error %s %s" (Mmlpp.typ_to_string t1)
-             (Mmlpp.typ_to_string t2))
+    | t1, t2 ->
+        Mmlerror.error
+          (Printf.sprintf "OK unification error %s %s" 
+            (Mmlpp.typ_to_string t1)
+            (Mmlpp.typ_to_string t2))
   in
 
   let instantiate s =
@@ -123,8 +127,8 @@ let type_inference prog =
 
   let rec w (e : expr) env =
     match e with
-    | Unit    -> TUnit
-    | Bool _  -> TBool
+    | Unit -> TUnit
+    | Bool _ -> TBool
     | Uop (Not, e) ->
         let t = w e env in
         unify t TBool;
@@ -135,8 +139,7 @@ let type_inference prog =
         unify t1 TInt;
         unify t2 TInt;
         TBool
-    | Bop ((Equ | Nequ 
-            | Or | And), e1, e2) ->
+    | Bop ((Equ | Nequ | Or | And), e1, e2) ->
         let t = w e1 env in
         unify t (w e2 env);
         TBool
@@ -145,9 +148,7 @@ let type_inference prog =
         let t = w e env in
         unify t TInt;
         TInt
-    | Bop ((Add | Sub 
-            | Mod 
-            | Mul | Div), e1, e2) ->
+    | Bop ((Add | Sub | Mod | Mul | Div), e1, e2) ->
         let t1 = w e1 env in
         let t2 = w e2 env in
         unify t1 TInt;
@@ -164,21 +165,32 @@ let type_inference prog =
         let t = w e1 env in
         unify t (w e2 env);
         t
-    | Fun (x, _, e) ->
-        let v = new_var () in
-        let env = SMap.add x { vars = VSet.empty; typ = TVar v } env in
-        let t = w e env in
-        TFun (TVar v, t)
+    | Fun (x, t, e) -> (
+        match t with
+        | None ->
+            let v = new_var () in
+            let env = SMap.add x { vars = VSet.empty; typ = TVar v } env in
+            let te = w e env in
+            TFun (TVar v, te)
+        | Some t ->
+            let env = SMap.add x { vars = VSet.empty; typ = t } env in
+            let te = w e env in
+            TFun (t, te))
     | App (e1, e2) ->
         let t1 = w e1 env in
         let t2 = w e2 env in
         let v = TVar (new_var ()) in
         unify t1 (TFun (t2, v));
         v
-    | Fix (s, _, e) ->
-        let v = new_var () in
-        let env = SMap.add s { vars = VSet.empty; typ = TVar v } env in
-        w e env
+    | Fix (s, t, e) -> (
+        match t with
+        | None ->
+            let v = new_var () in
+            let env = SMap.add s { vars = VSet.empty; typ = TVar v } env in
+            w e env
+        | Some t ->
+            let env = SMap.add s { vars = VSet.empty; typ = t } env in
+            w e env)
     | Seq (e1, e2) ->
         ignore (w e1 env);
         w e2 env
@@ -194,8 +206,7 @@ let type_inference prog =
         | TVar _ ->
             let _, t = get_struct_args x in
             t
-        | t ->
-            Mmlerror.not_a_struct t)
+        | t -> Mmlerror.not_a_struct t)
     | SetF (e1, x, e2) -> (
         match w e1 env with
         | TStrct s -> (
@@ -206,7 +217,7 @@ let type_inference prog =
               if m then
                 TUnit
               else
-                  Mmlerror.is_not_mutable s x
+                Mmlerror.is_not_mutable s x
             with Not_found -> Mmlerror.struct_no_field x)
         | TVar _ -> assert false
         | t -> Mmlerror.not_a_struct t)
