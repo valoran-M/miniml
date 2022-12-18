@@ -6,10 +6,23 @@
         | []            -> expr
         | (id, t) :: l  -> Fun(id, t, mk_fun l expr)
 
-    let rec mk_fun_type xs t = 
-        match xs with
-        | [] -> t
-        | (_, t')::xs -> TFun(t', mk_fun_type xs t)
+    let mk_fun_type xs t = 
+      match t with
+      | None -> None
+      | Some t -> 
+        let rec aux xs t =
+        let new_var =
+          let cpt = ref 0 in
+          fun () ->
+            incr cpt;
+            Printf.sprintf "tvar_%i" !cpt
+          in
+          match xs with
+          | [] -> t
+          | (_, Some t')::xs -> TFun(t', aux xs t)
+          | (_, None)::xs -> TFun (TVar (new_var ()), aux xs t)
+        in 
+        Some (aux xs t)
 %}
 
 (* Constantes et Varaibles *)
@@ -99,8 +112,13 @@ simple_expression:
     | S_BRACE a=nonempty_list(stuct_expression) E_BRACE     { Strct a }
 ;
 
+type_forcing:
+  COLON t=types {t}
+;
+
 fun_argument:    
-    | S_PAR id=IDENT COLON t=types E_PAR    { (id, t) }
+    | S_PAR id=IDENT t=type_forcing E_PAR   { (id, Some t) }
+    | id=IDENT                            { (id, None) }
 ;
 expression:
     | e=simple_expression                   { e }
@@ -117,7 +135,7 @@ expression:
         e1=expression IN 
         e2=expression                       { Let(id, mk_fun a e1, e2) }
     | LET REC id=IDENT a=list(fun_argument) 
-        COLON t=types S_EQ 
+        t=option(type_forcing) S_EQ 
         e1=expression IN 
         e2=expression                       { 
                                                 Let(id, Fix(id, 

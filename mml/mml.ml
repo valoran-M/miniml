@@ -34,9 +34,9 @@ type expr =
     | Var   of string
     | If    of expr * expr * expr
     | Let   of string * expr * expr
-    | Fun   of string * typ * expr
+    | Fun   of string * typ option * expr
     | App   of expr * expr
-    | Fix   of string * typ * expr
+    | Fix   of string * typ option * expr
     | Strct of (string * expr) list
     | GetF  of expr * string
     | SetF  of expr * string * expr

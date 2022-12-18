@@ -61,7 +61,7 @@ let type_prog prog =
     | Uop (Not, e) ->
         check e TBool tenv;
         TBool
-    | Bop ((Add | Sub
+    | Bop ((Add | Sub 
             | Mod 
             | Mul | Div), e1, e2) ->
         check e1 TInt tenv;
@@ -71,8 +71,8 @@ let type_prog prog =
         check e1 TInt tenv;
         check e2 TInt tenv;
         TBool
-    | Bop ((Equ | Nequ
-            |Lt | Le ), e1, e2) ->
+    | Bop ((Equ | Nequ 
+            | Lt | Le), e1, e2) ->
         check e1 (type_expr e2 tenv) tenv;
         TBool
     | Var s -> SymTbl.find s tenv
@@ -84,7 +84,8 @@ let type_prog prog =
         let t2 = type_expr e2 tenv in
         check e1 t2 tenv;
         t2
-    | Fun (id, t, e) -> TFun (t, type_expr e (SymTbl.add id t tenv))
+    | Fun (id, Some t, e) -> TFun (t, type_expr e (SymTbl.add id t tenv))
+    | Fun (_, None, _) -> assert false
     | App (e1, e2) -> (
         match type_expr e1 tenv with
         | TFun (t1, t2) ->
@@ -97,7 +98,8 @@ let type_prog prog =
                   This expression has typ %s\n\
                   This is not a function; it cannot be applied.\n"
                  (Mmlpp.typ_to_string t)))
-    | Fix (s, t, e) -> type_expr e (SymTbl.add s t tenv)
+    | Fix (s, Some t, e) -> type_expr e (SymTbl.add s t tenv)
+    | Fix (_, None, _) -> assert false
     | Seq (e1, e2) ->
         let _ = type_expr e1 tenv in
         type_expr e2 tenv

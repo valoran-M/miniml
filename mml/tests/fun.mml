@@ -1,6 +1,6 @@
-(*let f (x: int) (y: int) = x + y in
+(*let f x (y: int) = x + y in
 let g = f 3 in
 g 1 + g 4*)
 
-let f (x : int) (y : int) (z : int) = x + y + z in
+let f x (y : int) (z : int) = x + y + z in
 f 2 3 4
