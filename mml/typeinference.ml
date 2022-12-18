@@ -17,7 +17,32 @@ let type_inference prog =
       incr cpt;
       Printf.sprintf "tvar_%i" !cpt
   in
+
   let subst = Hashtbl.create 32 in
+
+  let get_type_def name =
+    snd (List.find (fun (id, _) -> name = id) prog.types)
+  in
+
+  let get_struct_with_name name =
+    match get_type_def name with
+    | StrctDef s -> s
+    | _ -> assert false
+  in
+
+  (* récupère la dernière structure posséder un paramètre appelé "id" *)
+  let get_struct_args x =
+    let rec aux = function
+      | [] -> Mmlerror.struct_no_field x
+      | (s, StrctDef arg) :: l -> (
+          try
+            let _, t, _ = (List.find (fun (id, _, _) -> id = x)) arg in
+            (s, t)
+          with Not_found -> aux l)
+      | _ :: l -> aux l
+    in
+    aux (List.rev prog.types)
+  in
 
   let rec unfold t =
     match t with
@@ -85,7 +110,9 @@ let type_inference prog =
     | TVar x -> VSet.singleton x
     | _ -> VSet.empty
   in
+
   let schema_fvars s = VSet.diff (fvars s.typ) s.vars in
+
   let generalize t env =
     let fvt = fvars t in
     let fvenv =
@@ -146,13 +173,61 @@ let type_inference prog =
         unify t1 (TFun (t2, v));
         v
     | Fix (s, _, e) ->
-        let v = new_var () in 
-        let env = SMap.add s { vars = VSet.empty; typ = TVar v} env in 
+        let v = new_var () in
+        let env = SMap.add s { vars = VSet.empty; typ = TVar v } env in
         w e env
     | Seq (e1, e2) ->
         ignore (w e1 env);
         w e2 env
-    | _ -> assert false
+    | Strct l -> struct_construct l env prog.types
+    | GetF (e, x) -> (
+        match w e env with
+        | TStrct s -> (
+            let st = get_struct_with_name s in
+            try
+              let _, t, _ = (List.find (fun (id, _, _) -> id = x)) st in
+              t
+            with Not_found -> Mmlerror.struct_no_field x)
+        | TVar _ ->
+            let _, t = get_struct_args x in
+            t
+        | t ->
+            Mmlerror.not_a_struct t)
+    | SetF (e1, x, e2) -> (
+        match w e1 env with
+        | TStrct s -> (
+            let st = get_struct_with_name s in
+            try
+              let _, t, m = (List.find (fun (id, _, _) -> id = x)) st in
+              unify (w e2 env) t;
+              if m then
+                TUnit
+              else
+                  Mmlerror.is_not_mutable s x
+            with Not_found -> Mmlerror.struct_no_field x)
+        | TVar _ -> assert false
+        | t -> Mmlerror.not_a_struct t)
+  and struct_construct l env = function
+    | [] ->
+        Mmlerror.struct_construct_error
+          (List.map (fun (n, e) -> (n, w e env)) l)
+    | (_, EnumDef _) :: ld -> struct_construct l env ld
+    | (name, StrctDef s) :: ld -> (
+        let rec iter_args = function
+          | (id1, e) :: l1, (id2, t, _) :: l2 ->
+              if id1 = id2 then
+                try
+                  unify t (w e env);
+                  iter_args (l1, l2)
+                with Failure _ -> None
+              else
+                None
+          | [], [] -> Some name
+          | _, _ -> None
+        in
+        match iter_args (l, s) with
+        | Some name -> TStrct name
+        | None -> struct_construct l env ld)
   in
 
   unfold_full (w prog.code SMap.empty)
