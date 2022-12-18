@@ -61,15 +61,18 @@ let type_prog prog =
     | Uop (Not, e) ->
         check e TBool tenv;
         TBool
-    | Bop ((Add | Sub | Mul | Div | Mod), e1, e2) ->
+    | Bop ((Add | Sub
+            | Mod 
+            | Mul | Div), e1, e2) ->
         check e1 TInt tenv;
         check e2 TInt tenv;
         TInt
-    | Bop ((Lt | Le | Or | And), e1, e2) ->
+    | Bop ((Or | And), e1, e2) ->
         check e1 TInt tenv;
         check e2 TInt tenv;
         TBool
-    | Bop ((Equ | Nequ), e1, e2) ->
+    | Bop ((Equ | Nequ
+            |Lt | Le ), e1, e2) ->
         check e1 (type_expr e2 tenv) tenv;
         TBool
     | Var s -> SymTbl.find s tenv

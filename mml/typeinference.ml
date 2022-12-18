@@ -123,8 +123,8 @@ let type_inference prog =
 
   let rec w (e : expr) env =
     match e with
-    | Unit -> TUnit
-    | Bool _ -> TBool
+    | Unit    -> TUnit
+    | Bool _  -> TBool
     | Uop (Not, e) ->
         let t = w e env in
         unify t TBool;
@@ -135,7 +135,8 @@ let type_inference prog =
         unify t1 TInt;
         unify t2 TInt;
         TBool
-    | Bop ((Equ | Nequ | Or | And), e1, e2) ->
+    | Bop ((Equ | Nequ 
+            | Or | And), e1, e2) ->
         let t = w e1 env in
         unify t (w e2 env);
         TBool
@@ -144,7 +145,9 @@ let type_inference prog =
         let t = w e env in
         unify t TInt;
         TInt
-    | Bop ((Add | Sub | Mod | Mul | Div), e1, e2) ->
+    | Bop ((Add | Sub 
+            | Mod 
+            | Mul | Div), e1, e2) ->
         let t1 = w e1 env in
         let t2 = w e2 env in
         unify t1 TInt;
