@@ -20,19 +20,16 @@ let type_inference prog =
 
   let subst = Hashtbl.create 32 in
 
-  (** récupère un type défini avec son nom *)
   let get_type_def name =
     snd (List.find (fun (id, _) -> name = id) prog.types)
   in
   
-  (** récupère la structure avec son nom *)
   let get_struct_with_name name =
     match get_type_def name with
     | StrctDef s -> s
     | _ -> assert false
   in
 
-  (** récupère la dernière structure posséder un paramètre appelé "id" *)
   let get_struct_args x =
     let rec aux = function
       | [] -> Mmlerror.struct_no_field x
