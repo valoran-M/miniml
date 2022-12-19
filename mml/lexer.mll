@@ -5,13 +5,13 @@
     exception Lexing_error of string
 
     (* hashtable avec tous les mots clefs *)
-    let keyword_table = Hashtbl.create 7
+    let keyword_table = Hashtbl.create 16
     let () =
         List.iter (fun (x, y) -> Hashtbl.add keyword_table x y )         
             [
                 "true", BOOL(true);
                 "false", BOOL(false);
-                (* calcule *)
+                (* calcul *)
                 "not", NOT;
                 "mod", MOD;
                 (* conditions *)
@@ -28,7 +28,8 @@
                 "bool", T_BOOL;
                 "unit", T_UNIT;
                 "type", TYPE;
-                "mutable", MUTABLE
+                "mutable", MUTABLE;
+                "of", OF
             ]
 
     let is_keyword name = Hashtbl.mem keyword_table name
@@ -68,6 +69,7 @@ rule pattern = parse
     | ":"       { COLON }
     | "()"      { UNIT_P }
     | ";"       { SEMI }
+    | ","       { COMMA }
     | "."       { DOT }
     | "|"       { BAR }
     (* opérations booléennes *)
