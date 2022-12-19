@@ -9,6 +9,7 @@ let rec typ_to_string = function
   | TFun (typ1, typ2) ->
       Printf.sprintf "(%s) -> %s" (typ_to_string typ1) (typ_to_string typ2)
   | TStrct s -> s
+  | TConstr s -> s
 
 let rec print_fields ppf = function
   | [] -> fprintf ppf ""
@@ -21,16 +22,16 @@ let rec print_fields ppf = function
       in
       fprintf ppf "%s %s: %s;@ %a" mut x (typ_to_string t) print_fields l
 
-let rec print_enum ppf = function
+let rec print_constr ppf = function
   | [] -> fprintf ppf ""
-  | s :: l -> fprintf ppf "| %s @. %a" s print_enum l
+  | (s, _) :: l -> fprintf ppf "| %s @. %a" s print_constr l
 
 let rec print_types ppf = function
   | [] -> fprintf ppf "@."
   | (t, StrctDef s) :: l ->
       fprintf ppf "type %s = { @[%a}@]@.%a" t print_fields s print_types l
-  | (t, EnumDef e) :: l ->
-      fprintf ppf "type %s = @[%a@]@.%a" t print_enum e print_types l
+  | (t, ConstrDef e) :: l ->
+      fprintf ppf "type %s = @[%a@]@.%a" t print_constr e print_types l
 
 let uop_to_string = function
   | Neg -> "-"
@@ -76,6 +77,12 @@ let rec print_expr ppf = function
   | Fix (x, Some t, e) ->
       fprintf ppf "fix (%s: %s) = (%a)" x (typ_to_string t) print_expr e
   | Fix (x, None, e) -> fprintf ppf "fix (%s) = (%a)" x print_expr e
+  | Constr (s, e) -> fprintf ppf "%s (%a)" s print_list_expr e
+
+and print_list_expr ppf = function
+  | [] -> fprintf ppf ""
+  | [ e ] -> fprintf ppf "%a" print_expr e
+  | e :: l -> fprintf ppf "%a, %a" print_expr e print_list_expr l
 
 and print_defs ppf = function
   | [] -> fprintf ppf ""

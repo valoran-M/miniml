@@ -23,7 +23,7 @@ let type_inference prog =
   let get_type_def name =
     snd (List.find (fun (id, _) -> name = id) prog.types)
   in
-  
+
   let get_struct_with_name name =
     match get_type_def name with
     | StrctDef s -> s
@@ -72,6 +72,7 @@ let type_inference prog =
     | TBool, TBool -> ()
     | TUnit, TUnit -> ()
     | TStrct s1, TStrct s2 when s1 = s2 -> ()
+    | TConstr s1, TConstr s2 when s1 = s2 -> ()
     | TFun (t1, t1'), TFun (t2, t2') ->
         unify t1 t2;
         unify t1' t2'
@@ -79,16 +80,14 @@ let type_inference prog =
     | TVar a, t | t, TVar a ->
         if occur a t then
           Mmlerror.error
-            (Printf.sprintf "unification error %s %s" 
-              (Mmlpp.typ_to_string t1)
-              (Mmlpp.typ_to_string t2))
+            (Printf.sprintf "unification error %s %s" (Mmlpp.typ_to_string t1)
+               (Mmlpp.typ_to_string t2))
         else
           Hashtbl.add subst a t
     | t1, t2 ->
         Mmlerror.error
-          (Printf.sprintf "OK unification error %s %s" 
-            (Mmlpp.typ_to_string t1)
-            (Mmlpp.typ_to_string t2))
+          (Printf.sprintf "OK unification error %s %s" (Mmlpp.typ_to_string t1)
+             (Mmlpp.typ_to_string t2))
   in
 
   let instantiate s =
@@ -218,11 +217,12 @@ let type_inference prog =
             with Not_found -> Mmlerror.struct_no_field x)
         | TVar _ -> assert false
         | t -> Mmlerror.not_a_struct t)
+    | Constr (_, _) -> assert false
   and struct_construct l env = function
     | [] ->
         Mmlerror.struct_construct_error
           (List.map (fun (n, e) -> (n, w e env)) l)
-    | (_, EnumDef _) :: ld -> struct_construct l env ld
+    | (_, ConstrDef _) :: ld -> struct_construct l env ld
     | (name, StrctDef s) :: ld -> (
         let rec iter_args = function
           | (id1, e) :: l1, (id2, t, _) :: l2 ->

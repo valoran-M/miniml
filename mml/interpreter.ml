@@ -19,8 +19,9 @@ let print_value = function
 
 (* Élements du tas *)
 type heap_value =
-    | VClos of string * expr * value Env.t
-    | VStrct of (string, value) Hashtbl.t
+    | VClos   of string * expr * value Env.t
+    | VStrct  of (string, value) Hashtbl.t
+    | VConstr of string * value list 
 
 (* Interprète un programme *)
 let eval_prog (prog : prog) : value =
@@ -70,9 +71,12 @@ let eval_prog (prog : prog) : value =
     | Strct s             -> create_struct s env
     | GetF (e, id)        -> eval_getf e id env
     | SetF (e1, id, e2)   -> eval_setf e1 id e2 env
+    (* Constr *)
+    | Constr (s, l)       -> create_const s l env
     (* Autres *)
     | If (c, e1, e2)      -> if evalb c env then eval e1 env else eval e2 env
     | Seq (e1, e2)        -> let _ = eval e1 env in eval e2 env
+
   (* Évaluation d'une expression dont la valeur est supposée entière *)
   and evali (e : expr) (env : value Env.t) : int =
     match e with
@@ -153,6 +157,14 @@ let eval_prog (prog : prog) : value =
     List.iter (fun (id, valeur) -> Hashtbl.add data id (eval valeur env)) s;
     let ptr = new_ptr () in
     Hashtbl.add mem ptr (VStrct data);
+    VPtr ptr
+  and create_const s l env =
+    let rec aux = function
+      | [] -> []
+      | e::l -> eval e env :: aux l
+    in
+    let ptr = new_ptr () in
+    Hashtbl.add mem ptr (VConstr (s, aux l));
     VPtr ptr
   in
 

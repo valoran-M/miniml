@@ -38,6 +38,7 @@ let digit = [ '0'-'9' ]
 let number = digit+ 
 let alpha = ['a'-'z' 'A'-'Z']
 let ident = ['a'-'z' '_'] (alpha | '_' | digit)*
+let construct = ['A'-'Z'] (alpha | '_' | digit)*
 let keyword = ['a'-'z']+
 let true = "true"
 let false = "false"
@@ -49,6 +50,9 @@ rule pattern = parse
     | "(*"              {comment lexbuf; pattern lexbuf}
     | number as _number {
             CST(int_of_string _number)
+        }
+    | construct as _construct {
+            CONSTR(_construct)
         }
     | keyword as name {
             if is_keyword name then
@@ -65,6 +69,7 @@ rule pattern = parse
     | "()"      { UNIT_P }
     | ";"       { SEMI }
     | "."       { DOT }
+    | "|"       { BAR }
     (* opérations booléennes *)
     | "=="      { EQU }
     | "!="      { NEQU }

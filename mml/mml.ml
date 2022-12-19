@@ -5,13 +5,14 @@ type typ =
     | TVar    of string
     | TFun    of typ * typ
     | TStrct  of string
+    | TConstr of string
 
 
 type enum = string list
 
 type tDef = 
-    | StrctDef of (string * typ * bool) list
-    | EnumDef  of string list
+    | StrctDef      of (string * typ * bool) list
+    | ConstrDef     of (string * typ list) list
 
 type uop = Neg | Not
 
@@ -26,21 +27,22 @@ type bop =
     | Or    | And
 
 type expr =
-    | Int   of int
-    | Bool  of bool
+    | Int     of int
+    | Bool    of bool
     | Unit
-    | Uop   of uop * expr
-    | Bop   of bop * expr * expr
-    | Var   of string
-    | If    of expr * expr * expr
-    | Let   of string * expr * expr
-    | Fun   of string * typ option * expr
-    | App   of expr * expr
-    | Fix   of string * typ option * expr
-    | Strct of (string * expr) list
-    | GetF  of expr * string
-    | SetF  of expr * string * expr
-    | Seq   of expr * expr
+    | Uop     of uop * expr
+    | Bop     of bop * expr * expr
+    | Var     of string
+    | If      of expr * expr * expr
+    | Let     of string * expr * expr
+    | Fun     of string * typ option * expr
+    | App     of expr * expr
+    | Fix     of string * typ option * expr
+    | Strct   of (string * expr) list
+    | GetF    of expr * string
+    | SetF    of expr * string * expr
+    | Seq     of expr * expr
+    | Constr  of string * expr list
 
 type prog = {
     types : (string * tDef) list;

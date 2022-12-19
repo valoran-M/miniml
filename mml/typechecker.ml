@@ -108,7 +108,7 @@ let type_prog prog =
           | [] ->
               struct_construct_error
                 (List.map (fun (n, e) -> (n, type_expr e tenv)) l)
-          | (_, EnumDef _) :: ld -> stuct_construct ld
+          | (_, ConstrDef _) :: ld -> stuct_construct ld
           | (name, StrctDef s) :: ld -> (
               let rec iter_args = function
                 | (id1, e) :: l1, (id2, t, _) :: l2 ->
@@ -157,6 +157,32 @@ let type_prog prog =
               (Printf.sprintf
                  "This expression has typ %s but was expected a struct\n"
                  (Mmlpp.typ_to_string t)))
+    | Constr (name, ex) ->
+        let rec constr_type = function
+          | [] -> assert false
+          | (_, StrctDef _) :: ld -> constr_type ld
+          | (cname, ConstrDef a) :: ld -> (
+              let rec iter_args = function
+                | (id, e) :: l ->
+                    if name = id then
+                      try
+                        List.iter2 
+                          (fun t e -> 
+                            if t != (type_expr e tenv) then  raise (Type_error "")) 
+                          e ex;
+                        Some cname
+                      with Type_error _ -> iter_args l
+                    else
+                      None
+                | _ -> None
+              in
+              match iter_args a with
+              | Some name -> TConstr name
+              | None -> constr_type ld)
+        in
+        constr_type prog.types
+
+
   in
 
   type_expr prog.code SymTbl.empty

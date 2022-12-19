@@ -31,6 +31,7 @@
 %token <int> CST
 %token UNIT_P
 %token TYPE 
+%token <string> CONSTR
 
 (* Types *)
 %token T_INT T_BOOL T_UNIT MUTABLE
@@ -48,7 +49,8 @@
 %token SEMI COLON R_ARROW L_ARROW DOT
 %token S_PAR E_PAR S_BRACE E_BRACE
 %token LET FUN REC S_EQ IN
-%token EOF
+%token BAR
+%token EOF 
 
 %start program
 %type <Mml.prog> program
@@ -73,7 +75,7 @@
 %left OR
 %left AND
 %nonassoc NOT
-%nonassoc S_PAR S_BRACE 
+%nonassoc S_PAR S_BRACE CONSTR
 
 
 %%
@@ -83,13 +85,6 @@ program:
         c=expression EOF        { {types = l; code = c} }
 ;
 
-stuct_types:    
-    | m=boption(MUTABLE) id=IDENT COLON t=types SEMI    { (id, t, m) }
-;
-typdes_def:
-    | TYPE id=IDENT S_EQ 
-        S_BRACE a=nonempty_list(stuct_types) E_BRACE     { (id, StrctDef a) }
-
 types:
     | T_INT                     { TInt }
     | T_BOOL                    { TBool }
@@ -98,6 +93,18 @@ types:
     | t1=types R_ARROW t2=types { TFun(t1, t2) }
     | S_PAR t=types E_PAR       { t }
 ;
+
+stuct_types:    
+    | m=boption(MUTABLE) id=IDENT COLON t=types SEMI    { (id, t, m) }
+;
+constr_types:
+    | BAR c=CONSTR                                      {(c, [])}
+;
+typdes_def:
+    | TYPE id=IDENT S_EQ 
+        S_BRACE a=nonempty_list(stuct_types) E_BRACE    { (id, StrctDef a) }
+    | TYPE id=IDENT S_EQ 
+        a=nonempty_list(constr_types)                   { (id, ConstrDef a) }  
 
 stuct_expression:    
     | id=IDENT S_EQ e=expression SEMI   { (id, e) }
@@ -110,6 +117,7 @@ simple_expression:
     | S_PAR e=expression E_PAR                              { e }
     | e=simple_expression DOT id=IDENT                      { GetF(e, id) }
     | S_BRACE a=nonempty_list(stuct_expression) E_BRACE     { Strct a }
+    | id=CONSTR                                             { Constr(id, []) }
 ;
 
 type_forcing:
@@ -118,7 +126,7 @@ type_forcing:
 
 fun_argument:    
     | S_PAR id=IDENT t=type_forcing E_PAR   { (id, Some t) }
-    | id=IDENT                            { (id, None) }
+    | id=IDENT                              { (id, None) }
 ;
 expression:
     | e=simple_expression                   { e }

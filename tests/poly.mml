@@ -1,0 +1,3 @@
+let f x = x in
+f true;
+f 3
