@@ -28,7 +28,8 @@ let rec types_list_to_string = function
 
 let rec print_constr ppf = function
   | [] -> fprintf ppf ""
-  | (s, _) :: l -> fprintf ppf "| %s @. %a" s print_constr l
+  | (s, tl) :: l -> 
+      fprintf ppf "| %s of %s @. %a" s (types_list_to_string tl) print_constr l
 
 let rec print_types ppf = function
   | [] -> fprintf ppf "@."

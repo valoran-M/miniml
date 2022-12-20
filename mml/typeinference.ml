@@ -11,6 +11,8 @@ module SMap = Map.Make (String)
 type env = schema SMap.t
 
 let type_inference prog =
+  let types = List.rev prog.types in
+
   let new_var =
     let cpt = ref 0 in
     fun () ->
@@ -139,17 +141,11 @@ let type_inference prog =
         unify t2 TInt;
         TBool
     | Bop ((Equ   | Nequ 
+          | Sequ  | Snequ
           | Or    | And), e1, e2) ->
         let t = w e1 env in
         unify t (w e2 env);
         TBool
-    | Bop ((Sequ | Snequ), e1, e2) ->(
-        let t1 = w e1 env in 
-        let t2 = w e2 env in
-        unify t1 t2;
-        match t1, t2 with 
-        | TFun _, _ | _, TFun _ -> Mmlerror.compare_fun ()
-        | _, _ -> TBool)
     | Int _ -> TInt
     | Uop (Neg, e) ->
         let t = w e env in
@@ -204,7 +200,7 @@ let type_inference prog =
         ignore (w e1 env);
         w e2 env
     | Constr (name, ex) -> construct_infer name ex env
-    | Strct l -> struct_infer l env prog.types
+    | Strct l -> struct_infer l env types
     | GetF (e, x) -> (
         match w e env with
         | TDef s -> (
@@ -277,7 +273,7 @@ let type_inference prog =
           | Some name -> TDef name
           | None -> aux ld)
     in
-    aux prog.types
+    aux types
   in
 
   unfold_full (w prog.code SMap.empty)

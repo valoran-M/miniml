@@ -113,7 +113,20 @@ let eval_prog (prog : prog) : value * (int, heap_value) Hashtbl.t =
         | VBool b -> b
         | _ -> assert false)
   and struc_equal (v1: value) (v2: value) : bool =
-    v1 = v2
+    match v1, v2 with
+    | VInt  v1  , VInt  v2  -> v1 = v2
+    | VBool b1  , VBool b2  -> b1 = b2
+    | VPtr  pt1 , VPtr  pt2 -> (
+        match (Hashtbl.find mem pt1, Hashtbl.find mem pt2) with 
+        | VClos _, _ | _, VClos _ -> Mmlerror.compare_fun ();
+        | VStrct s1, VStrct s2 -> 
+            Hashtbl.fold 
+              (fun id v acc -> acc && struc_equal v (Hashtbl.find s2 id)) 
+              s1 true
+        | VConstr (s1, c1), VConstr (s2, c2) when s1 = s2 -> 
+            List.fold_left2 (fun acc v1 v2 -> acc && struc_equal v1 v2) true c1 c2
+        | _, _ -> false) 
+    | _, _ -> false
   (* eval fun id -> e *)
   and eval_fun (id: string) (e: expr) env :value =
     let ptr = new_ptr () in
