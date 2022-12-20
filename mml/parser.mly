@@ -26,58 +26,82 @@
 %}
 
 (* Constantes et Varaibles *)
-%token <string> IDENT
-%token <bool> BOOL
-%token <int> CST
-%token UNIT_P
-%token TYPE 
-%token <string> CONSTR
-
+%token <string> IDENT       "x"
+%token <bool> BOOL          "b"
+%token <int> CST            "n"
+%token UNIT_P               "()"
 (* Types *)
-%token T_INT T_BOOL T_UNIT MUTABLE
-
+%token T_INT    "int"
+%token T_BOOL   "bool"
+%token T_UNIT   "unit"
+%token MUTABLE  "mutable"
 (* Expressions booléennes *)
-%token NOT EQU NEQU LT LE AND OR
-
+%token NOT      "!"
+%token EQU      "=="
+%token NEQU     "!="
+%token LT       "<"
+%token LE       "<="
+%token AND      "&&"
+%token OR       "||"
+%token S_EQ     "="
 (* Expressions arithmétiques *)
-%token STAR PLUS MINUS DIV MOD
-
+%token STAR     "*"
+%token PLUS     "+"
+%token MINUS    "-"
+%token DIV      "/"
+%token MOD      "mod"
 (* Condition *)
-%token IF THEN ELSE
-
+%token IF       "if"
+%token THEN     "then"
+%token  ELSE    "else"
 (* Autres *)
-%token SEMI COLON R_ARROW L_ARROW DOT
-%token S_PAR E_PAR S_BRACE E_BRACE
-%token LET FUN REC S_EQ IN
-%token BAR OF COMMA
-%token EOF 
+%token SEMI     ";"
+%token COLON    ":"
+%token R_ARROW  "<-"
+%token L_ARROW  "->"
+%token DOT      "."
+%token S_PAR    "("
+%token E_PAR    ")"
+%token S_BRACE  "{"
+%token E_BRACE  "}"
+%token LET      "let"
+%token FUN      "fun"
+%token REC      "rec"
+%token IN       "in"
+%token BAR      "|"
+%token OF       "of"
+%token COMMA    ","
+%token EOF      ""
+%token TYPE     "type"
+%token <string> CONSTR      "Uid"
 
 %start program
 %type <Mml.prog> program
 
 
 (* Prioritées *)
-%nonassoc   IN
-%nonassoc   UNIT_P IDENT CST BOOL
-%left       SEMI
-%nonassoc   L_ARROW
-%nonassoc   R_ARROW 
-%nonassoc   THEN
-%nonassoc   ELSE
+%nonassoc IN                    (* let ... in ... *)
+%nonassoc UNIT_P IDENT CST BOOL
+%left     SEMI                  (* { id1 = e1; ... idn = en } *)
+%nonassoc L_ARROW
+%nonassoc R_ARROW               (* type(t -> t -> t) *)
+%nonassoc THEN                  (* BELLOW else if ... then ... *)
+%nonassoc ELSE                  (* if ... then ... else ... *)
 
-%left       EQU NEQU 
-%left       LT LE
+%left     OR                    (* expr( e || e || e) *)
+%left     AND                   (* expr( e && e && e) *)
+%nonassoc NOT                   (* expr *)
 
-%left       PLUS MINUS
-%left       MOD
-%left       STAR DIV
+%left     EQU NEQU              (* expr( e == e == e) *)
+%left     LT LE                 (* expr( e < e < e) *)
 
-%left       OR
-%left       AND
-%nonassoc   NOT
+%left     PLUS MINUS            (* expr( e + e + e) *)
+%left     MOD                   (* expr( e mod e mod e) *)
+%left     STAR DIV              (* expr( e * e * e) *)
 
-%nonassoc   prec_constr_empty
-%nonassoc   S_PAR S_BRACE CONSTR
+%nonassoc prec_constr_empty     (* C vs C (x) *)
+(* Autres *)
+%nonassoc S_PAR S_BRACE CONSTR
 
 %%
 
@@ -114,6 +138,9 @@ expression:
     
 ;
 
+%inline fun_argument:
+  a=let_argument  { a }
+
 (* types *)
 types:
     | T_INT                     { TInt }
@@ -128,7 +155,7 @@ typdes_def:
     | c=constr_def    { c }
 ;
 
-(* Fonction *)
+(* Déclaration *)
 %inline let_expr:
     | LET id=IDENT 
         a=list(let_argument) S_EQ 
@@ -200,5 +227,4 @@ constr_param:
     | OR    { Or }  | AND   { And }
 ;
 
-%inline fun_argument:
-  a=let_argument  { a }
+

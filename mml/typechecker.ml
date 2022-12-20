@@ -61,9 +61,7 @@ let type_prog prog =
     | Uop (Not, e) ->
         check e TBool tenv;
         TBool
-    | Bop ((Add | Sub 
-            | Mod 
-            | Mul | Div), e1, e2) ->
+    | Bop ((Add | Sub | Mod | Mul | Div), e1, e2) ->
         check e1 TInt tenv;
         check e2 TInt tenv;
         TInt
@@ -71,8 +69,7 @@ let type_prog prog =
         check e1 TInt tenv;
         check e2 TInt tenv;
         TBool
-    | Bop ((Equ | Nequ 
-            | Lt | Le), e1, e2) ->
+    | Bop ((Equ | Nequ | Lt | Le), e1, e2) ->
         check e1 (type_expr e2 tenv) tenv;
         TBool
     | Var s -> SymTbl.find s tenv
@@ -158,31 +155,31 @@ let type_prog prog =
                  "This expression has typ %s but was expected a struct\n"
                  (Mmlpp.typ_to_string t)))
     | Constr (name, ex) ->
+        let lt2 = List.map (fun e -> type_expr e tenv) ex in
         let rec constr_type = function
-          | [] -> assert false
+          | [] -> Mmlerror.unbound_construct name lt2
           | (_, StrctDef _) :: ld -> constr_type ld
           | (cname, ConstrDef a) :: ld -> (
               let rec iter_args = function
-                | (id, e) :: l ->
+                | [] -> None
+                | (id, lt1) :: l ->
                     if name = id then
                       try
-                        List.iter2 
-                          (fun t e -> 
-                            if t != (type_expr e tenv) then  raise (Type_error "")) 
-                          e ex;
+                        List.iter2
+                          (fun t1 t2 -> if t1 != t2 then raise (Type_error ""))
+                          lt1 lt2;
                         Some cname
-                      with Type_error _ -> iter_args l
+                      with Invalid_argument _ ->
+                        Mmlerror.nb_arg_construct id (List.length lt1)
+                          (List.length lt2)
                     else
-                      None
-                | _ -> None
+                      iter_args l
               in
               match iter_args a with
               | Some name -> TConstr name
               | None -> constr_type ld)
         in
         constr_type prog.types
-
-
   in
 
   type_expr prog.code SymTbl.empty

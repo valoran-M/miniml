@@ -190,7 +190,7 @@ let type_inference prog =
     | Seq (e1, e2) ->
         ignore (w e1 env);
         w e2 env
-    | Strct l -> struct_construct l env prog.types
+    | Strct l -> struct_infer l env prog.types
     | GetF (e, x) -> (
         match w e env with
         | TStrct s -> (
@@ -217,12 +217,12 @@ let type_inference prog =
             with Not_found -> Mmlerror.struct_no_field x)
         | TVar _ -> assert false
         | t -> Mmlerror.not_a_struct t)
-    | Constr (_, _) -> assert false
-  and struct_construct l env = function
+    | Constr (name, ex) -> construct_infer name ex env
+  and struct_infer l env = function
     | [] ->
         Mmlerror.struct_construct_error
           (List.map (fun (n, e) -> (n, w e env)) l)
-    | (_, ConstrDef _) :: ld -> struct_construct l env ld
+    | (_, ConstrDef _) :: ld -> struct_infer l env ld
     | (name, StrctDef s) :: ld -> (
         let rec iter_args = function
           | (id1, e) :: l1, (id2, t, _) :: l2 ->
@@ -238,7 +238,31 @@ let type_inference prog =
         in
         match iter_args (l, s) with
         | Some name -> TStrct name
-        | None -> struct_construct l env ld)
+        | None -> struct_infer l env ld)
+  and construct_infer name l env =
+    let lt2 = List.map (fun e -> w e env) l in
+    let rec aux = function
+      | [] -> Mmlerror.unbound_construct name lt2
+      | (_, StrctDef _) :: ld -> aux ld
+      | (cname, ConstrDef a) :: ld -> (
+          let rec iter_args = function
+            | [] -> None
+            | (id, lt1) :: l ->
+                if name = id then
+                  try
+                    List.iter2 (fun t1 t2 -> unify t1 t2) lt1 lt2;
+                    Some cname
+                  with  Invalid_argument _ ->
+                    Mmlerror.nb_arg_construct id (List.length lt1)
+                          (List.length lt2)
+                else
+                  iter_args l
+          in
+          match iter_args a with
+          | Some name -> TConstr name
+          | None -> aux ld)
+    in
+    aux prog.types
   in
 
   unfold_full (w prog.code SMap.empty)

@@ -22,6 +22,11 @@ let rec print_fields ppf = function
       in
       fprintf ppf "%s %s: %s;@ %a" mut x (typ_to_string t) print_fields l
 
+let rec types_list_to_string = function
+  | [] -> ""
+  | [ t ] -> Printf.sprintf "%s" (typ_to_string t)
+  | t :: l -> Printf.sprintf "%s, %s" (typ_to_string t) (types_list_to_string l)
+
 let rec print_constr ppf = function
   | [] -> fprintf ppf ""
   | (s, _) :: l -> fprintf ppf "| %s @. %a" s print_constr l

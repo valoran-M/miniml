@@ -30,8 +30,8 @@ let () =
   try
     let prog = Parser.program Lexer.pattern lb in
     close_in c;
-    ignore (Typechecker.type_prog prog);
-    (* ignore (Typeinference.type_inference prog); *)
+    (* ignore (Typechecker.type_prog prog); *)
+    ignore (Typeinference.type_inference prog);
     let output_value = Interpreter.eval_prog prog in
     Interpreter.print_value output_value
   with
@@ -43,7 +43,7 @@ let () =
       report (lexeme_start_p lb, lexeme_end_p lb);
       eprintf "syntax error@.";
       exit 1
-  | Typechecker.Type_error s ->
+  | Mmlerror.Type_error s ->
       eprintf "type error: %s@." s;
       exit 1
   | e ->
