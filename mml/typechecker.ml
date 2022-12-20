@@ -31,6 +31,8 @@ let struct_construct_error l =
 
 (* Vérification des types d'un programme *)
 let type_prog prog =
+  let types = List.rev prog.types in
+
   let get_type_def name =
     snd (List.find (fun (id, _) -> name = id) prog.types)
   in
@@ -122,13 +124,13 @@ let type_prog prog =
                 | _, _ -> None
               in
               match iter_args (l, s) with
-              | Some name -> TStrct name
+              | Some name -> TDef name
               | None -> stuct_construct ld)
         in
         stuct_construct prog.types
     | GetF (e, x) -> (
         match type_expr e tenv with
-        | TStrct s -> (
+        | TDef s -> (
             let st = get_struct s in
             try
               let _, t, _ = (List.find (fun (id, _, _) -> id = x)) st in
@@ -141,7 +143,7 @@ let type_prog prog =
                  (Mmlpp.typ_to_string t)))
     | SetF (e1, x, e2) -> (
         match type_expr e1 tenv with
-        | TStrct s -> (
+        | TDef s -> (
             let st = get_struct s in
             try
               let _, t, m = (List.find (fun (id, _, _) -> id = x)) st in
@@ -157,18 +159,19 @@ let type_prog prog =
                  "This expression has typ %s but was expected a struct\n"
                  (Mmlpp.typ_to_string t)))
     | Constr (name, ex) ->
-        let lt2 = List.map (fun e -> type_expr e tenv) ex in
+        let lt1 = List.map (fun e -> type_expr e tenv) ex in
         let rec constr_type = function
-          | [] -> Mmlerror.unbound_construct name lt2
+          | [] -> Mmlerror.unbound_construct name lt1
           | (_, StrctDef _) :: ld -> constr_type ld
           | (cname, ConstrDef a) :: ld -> (
               let rec iter_args = function
                 | [] -> None
-                | (id, lt1) :: l ->
+                | (id, lt2) :: l ->
                     if name = id then
                       try
                         List.iter2
-                          (fun t1 t2 -> if t1 != t2 then raise (Type_error ""))
+                          (fun t1 t2 ->
+                            if t1 <> t2 then Mmlerror.type_error t1 t2)
                           lt1
                           lt2;
                         Some cname
@@ -181,10 +184,10 @@ let type_prog prog =
                       iter_args l
               in
               match iter_args a with
-              | Some name -> TConstr name
+              | Some name -> TDef name
               | None -> constr_type ld)
         in
-        constr_type prog.types
+        constr_type types
   in
 
   type_expr prog.code SymTbl.empty

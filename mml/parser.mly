@@ -44,6 +44,7 @@
 %token AND      "&&"
 %token OR       "||"
 %token S_EQ     "="
+%token DIFF     "<>"
 (* Expressions arithmétiques *)
 %token STAR     "*"
 %token PLUS     "+"
@@ -92,7 +93,7 @@
 %left     AND                   (* expr( e && e && e) *)
 %nonassoc NOT                   (* expr *)
 
-%left     EQU NEQU              (* expr( e == e == e) *)
+%left     EQU NEQU DIFF S_EQ    (* expr( e == e == e) *)
 %left     LT LE                 (* expr( e < e < e) *)
 
 %left     PLUS MINUS            (* expr( e + e + e) *)
@@ -146,7 +147,7 @@ types:
     | T_INT                     { TInt }
     | T_BOOL                    { TBool }
     | T_UNIT                    { TUnit }
-    | id=IDENT                  { TStrct(id) }
+    | id=IDENT                  { TDef(id) }
     | t1=types R_ARROW t2=types { TFun(t1, t2) }
     | S_PAR t=types E_PAR       { t }
 ;
@@ -223,6 +224,7 @@ constr_param:
     | STAR  { Mul } | DIV   { Div }
     (* Opérations Booléennes *)
     | EQU   { Equ } | NEQU  { Nequ }
+    | S_EQ  { Sequ }| DIFF  { Snequ }
     | LE    { Le }  | LT    { Lt }
     | OR    { Or }  | AND   { And }
 ;

@@ -75,6 +75,7 @@ rule pattern = parse
     (* opérations booléennes *)
     | "=="      { EQU }
     | "!="      { NEQU }
+    | "<>"      { DIFF }
     | "<"       { LT }
     | "<="      { LE }
     | "&&"      { AND }

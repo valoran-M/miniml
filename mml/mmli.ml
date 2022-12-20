@@ -33,7 +33,7 @@ let () =
     close_in c;
     (* ignore (Typechecker.type_prog prog); *)
     ignore (Typeinference.type_inference prog);
-    let output_value = Interpreter.eval_prog prog in
+    let output_value, _ = Interpreter.eval_prog prog in
     Interpreter.print_value output_value
   with
   | Lexer.Lexing_error s ->

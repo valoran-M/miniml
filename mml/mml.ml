@@ -4,8 +4,7 @@ type typ =
     | TUnit
     | TVar    of string
     | TFun    of typ * typ
-    | TStrct  of string
-    | TConstr of string
+    | TDef    of string
 
 
 type enum = string list
@@ -23,6 +22,7 @@ type bop =
     | Mul   | Div
     (* opérations booléennes *)
     | Equ   | Nequ
+    | Sequ  | Snequ
     | Le    | Lt
     | Or    | And
 

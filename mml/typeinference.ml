@@ -71,8 +71,7 @@ let type_inference prog =
     | TInt, TInt -> ()
     | TBool, TBool -> ()
     | TUnit, TUnit -> ()
-    | TStrct s1, TStrct s2 when s1 = s2 -> ()
-    | TConstr s1, TConstr s2 when s1 = s2 -> ()
+    | TDef s1, TDef s2 when s1 = s2 -> ()
     | TFun (t1, t1'), TFun (t2, t2') ->
         unify t1 t2;
         unify t1' t2'
@@ -139,11 +138,18 @@ let type_inference prog =
         unify t1 TInt;
         unify t2 TInt;
         TBool
-    | Bop ((Equ | Nequ 
-          | Or | And), e1, e2) ->
+    | Bop ((Equ   | Nequ 
+          | Or    | And), e1, e2) ->
         let t = w e1 env in
         unify t (w e2 env);
         TBool
+    | Bop ((Sequ | Snequ), e1, e2) ->(
+        let t1 = w e1 env in 
+        let t2 = w e2 env in
+        unify t1 t2;
+        match t1, t2 with 
+        | TFun _, _ | _, TFun _ -> Mmlerror.compare_fun ()
+        | _, _ -> TBool)
     | Int _ -> TInt
     | Uop (Neg, e) ->
         let t = w e env in
@@ -201,7 +207,7 @@ let type_inference prog =
     | Strct l -> struct_infer l env prog.types
     | GetF (e, x) -> (
         match w e env with
-        | TStrct s -> (
+        | TDef s -> (
             let st = get_struct_with_name s in
             try
               let _, t, _ = (List.find (fun (id, _, _) -> id = x)) st in
@@ -213,7 +219,7 @@ let type_inference prog =
         | t -> Mmlerror.not_a_struct t)
     | SetF (e1, x, e2) -> (
         match w e1 env with
-        | TStrct s -> (
+        | TDef s -> (
             let st = get_struct_with_name s in
             try
               let _, t, m = (List.find (fun (id, _, _) -> id = x)) st in
@@ -244,7 +250,7 @@ let type_inference prog =
           | _, _ -> None
         in
         match iter_args (l, s) with
-        | Some name -> TStrct name
+        | Some name -> TDef name
         | None -> struct_infer l env ld)
   and construct_infer name l env =
     let lt2 = List.map (fun e -> w e env) l in
@@ -268,7 +274,7 @@ let type_inference prog =
                   iter_args l
           in
           match iter_args a with
-          | Some name -> TConstr name
+          | Some name -> TDef name
           | None -> aux ld)
     in
     aux prog.types

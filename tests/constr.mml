@@ -1,3 +1,4 @@
-type t = | Some of int | None
+type t2 = | Some of int | None
+type t1 = | Some of bool
 
-Some (3)
+Some (2) = Some(2)

@@ -1,0 +1,5 @@
+type tree = 
+  | Leaf 
+  | Node of tree * int * tree
+
+Node (Leaf, 4, Leaf)

@@ -46,6 +46,7 @@ let nb_arg_construct name n1 n2 =
     (Printf.sprintf
        "The constructor %s expects %d argument(s),\n\
        \ but is applied here to %d argument(s)\n"
-       name
-       n1
-       n2)
+       name n1 n2)
+
+let compare_fun () =
+  error "compare: functional value"

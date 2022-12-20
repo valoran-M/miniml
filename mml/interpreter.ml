@@ -24,7 +24,7 @@ type heap_value =
     | VConstr of string * value list 
 
 (* Interprète un programme *)
-let eval_prog (prog : prog) : value =
+let eval_prog (prog : prog) : value * (int, heap_value) Hashtbl.t =
   (* Initialisation de la mémoire globale *)
   let (mem : (int, heap_value) Hashtbl.t) = Hashtbl.create 16 in
 
@@ -53,15 +53,16 @@ let eval_prog (prog : prog) : value =
     (* Opération Booléenne *)
     | Bool b          -> VBool b
     | (Uop (Not, _) 
-    | Bop ((Equ | Nequ 
-          | Le | Lt 
-          | Or | And), _, _)) as op   -> VBool (evalb op env)
+    | Bop ((Equ   | Nequ 
+          | Sequ  | Snequ
+          | Le    | Lt 
+          | Or    | And), _, _)) as op    -> VBool (evalb op env)
     (* Opération Arithmétique *)
     | Int n           -> VInt n
     | (Uop (Neg, _) 
     | Bop ((Add | Sub 
           | Mod 
-          | Mul | Div), _, _)) as op  -> VInt (evali op env)
+          | Mul | Div), _, _)) as op      -> VInt (evali op env)
     (* Fonction *)
     | Fun (id, _, e)      -> eval_fun id e env
     | Let (id, e1, e2)    -> eval e2 (Env.add id (eval e1 env) env)
@@ -74,7 +75,8 @@ let eval_prog (prog : prog) : value =
     (* Constr *)
     | Constr (s, l)       -> create_const s l env
     (* Autres *)
-    | If (c, e1, e2)      -> if evalb c env then eval e1 env else eval e2 env
+    | If (c, e1, e2)      -> if evalb c env then eval e1 env 
+                                            else eval e2 env
     | Seq (e1, e2)        -> let _ = eval e1 env in eval e2 env
 
   (* Évaluation d'une expression dont la valeur est supposée entière *)
@@ -98,6 +100,10 @@ let eval_prog (prog : prog) : value =
     | Uop (Not, e)        -> not (evalb e env)
     | Bop (Equ, e1, e2)   -> eval e1 env = eval e2 env
     | Bop (Nequ, e1, e2)  -> evali e1 env != evali e2 env
+    | Bop (Sequ, e1, e2)  -> struc_equal  (eval e1 env) 
+                                          (eval e2 env)
+    | Bop (Snequ, e1, e2) -> not (struc_equal (eval e1 env) 
+                                              (eval e2 env))
     | Bop (Le, e1, e2)    -> evali e1 env <= evali e2 env
     | Bop (Lt, e1, e2)    -> evali e1 env < evali e2 env
     | Bop (Or, e1, e2)    -> evalb e1 env || evalb e2 env
@@ -106,13 +112,15 @@ let eval_prog (prog : prog) : value =
         match eval e env with
         | VBool b -> b
         | _ -> assert false)
+  and struc_equal (v1: value) (v2: value) : bool =
+    v1 = v2
   (* eval fun id -> e *)
-  and eval_fun id e env =
+  and eval_fun (id: string) (e: expr) env :value =
     let ptr = new_ptr () in
     Hashtbl.add mem ptr (VClos (id, e, env));
     VPtr ptr
   (* eval e1 e2 *)
-  and eval_app e1 e2 env =
+  and eval_app (e1: expr) (e2: expr) env :value=
     let val_e2 = eval e2 env in
     match eval e1 env with
     | VPtr p -> (
@@ -121,7 +129,7 @@ let eval_prog (prog : prog) : value =
         | _ -> assert false)
     | _ -> assert false
   (* eval Fix(id, t, e) *)
-  and eval_fix id e env =
+  and eval_fix (id: string) (e: expr) env :value=
     match e with
     | Fun(f, _, e) -> 
         let ptr = new_ptr () in
@@ -138,7 +146,7 @@ let eval_prog (prog : prog) : value =
         VPtr ptr
     | _ -> assert false
   (* eval e2.id <- e2 *)
-  and eval_setf e1 id e2 env : value =
+  and eval_setf (e1: expr) (id: string) (e2: expr) env : value =
     let new_val = eval e2 env in
     match eval e1 env with
     | VPtr a ->
@@ -147,7 +155,7 @@ let eval_prog (prog : prog) : value =
         VUnit
     | _ -> assert false
   (* eval e.id *)
-  and eval_getf e id env : value =
+  and eval_getf (e: expr) (id: string) env : value =
     match eval e env with
     | VPtr a -> Hashtbl.find (find_struct a) id
     | _ -> assert false
@@ -158,7 +166,7 @@ let eval_prog (prog : prog) : value =
     let ptr = new_ptr () in
     Hashtbl.add mem ptr (VStrct data);
     VPtr ptr
-  and create_const s l env =
+  and create_const (s: string) (l: expr list) env :value =
     let rec aux = function
       | [] -> []
       | e::l -> eval e env :: aux l
@@ -168,4 +176,4 @@ let eval_prog (prog : prog) : value =
     VPtr ptr
   in
 
-  eval prog.code Env.empty
+  (eval prog.code Env.empty, mem)
