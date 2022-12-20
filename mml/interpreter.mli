@@ -4,7 +4,6 @@ type value =
     | VUnit
     | VPtr of int
 
-val print_value: value -> unit
+val print_value : value -> unit
 
 val eval_prog : Mml.prog -> value
-

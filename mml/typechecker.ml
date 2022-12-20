@@ -12,7 +12,8 @@ let error s = raise (Type_error s)
 
 let type_error ty_actual ty_expected =
   error
-    (Printf.sprintf "expected %s but got %s"
+    (Printf.sprintf
+       "expected %s but got %s"
        (Mmlpp.typ_to_string ty_expected)
        (Mmlpp.typ_to_string ty_actual))
 (* vous pouvez ajouter d'autres types d'erreurs *)
@@ -24,7 +25,8 @@ let struct_construct_error l =
         Format.sprintf "%s: %s ; %s" n (Mmlpp.typ_to_string t) (print_struct l)
   in
   error
-    (Printf.sprintf "The structure of the form {%s} does not exist"
+    (Printf.sprintf
+       "The structure of the form {%s} does not exist"
        (print_struct l))
 
 (* Vérification des types d'un programme *)
@@ -167,10 +169,13 @@ let type_prog prog =
                       try
                         List.iter2
                           (fun t1 t2 -> if t1 != t2 then raise (Type_error ""))
-                          lt1 lt2;
+                          lt1
+                          lt2;
                         Some cname
                       with Invalid_argument _ ->
-                        Mmlerror.nb_arg_construct id (List.length lt1)
+                        Mmlerror.nb_arg_construct
+                          id
+                          (List.length lt1)
                           (List.length lt2)
                     else
                       iter_args l

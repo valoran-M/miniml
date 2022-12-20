@@ -2,6 +2,7 @@ open Lexing
 open Format
 
 let usage = "usage: ./mmli file.mml"
+
 let spec = []
 
 let file =

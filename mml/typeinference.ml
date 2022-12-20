@@ -1,10 +1,10 @@
 open Mml
 module VSet = Set.Make (String)
 
-type schema = {
-    vars : VSet.t;
-    typ : Mml.typ;
-  }
+type schema =
+    { vars : VSet.t
+    ; typ : Mml.typ
+    }
 
 module SMap = Map.Make (String)
 
@@ -80,13 +80,17 @@ let type_inference prog =
     | TVar a, t | t, TVar a ->
         if occur a t then
           Mmlerror.error
-            (Printf.sprintf "unification error %s %s" (Mmlpp.typ_to_string t1)
+            (Printf.sprintf
+               "unification error %s %s"
+               (Mmlpp.typ_to_string t1)
                (Mmlpp.typ_to_string t2))
         else
           Hashtbl.add subst a t
     | t1, t2 ->
         Mmlerror.error
-          (Printf.sprintf "OK unification error %s %s" (Mmlpp.typ_to_string t1)
+          (Printf.sprintf
+             "OK unification error %s %s"
+             (Mmlpp.typ_to_string t1)
              (Mmlpp.typ_to_string t2))
   in
 
@@ -135,7 +139,8 @@ let type_inference prog =
         unify t1 TInt;
         unify t2 TInt;
         TBool
-    | Bop ((Equ | Nequ | Or | And), e1, e2) ->
+    | Bop ((Equ | Nequ 
+          | Or | And), e1, e2) ->
         let t = w e1 env in
         unify t (w e2 env);
         TBool
@@ -144,7 +149,9 @@ let type_inference prog =
         let t = w e env in
         unify t TInt;
         TInt
-    | Bop ((Add | Sub | Mod | Mul | Div), e1, e2) ->
+    | Bop ((Add | Sub 
+          | Mod 
+          | Mul | Div), e1, e2) ->
         let t1 = w e1 env in
         let t2 = w e2 env in
         unify t1 TInt;
@@ -190,6 +197,7 @@ let type_inference prog =
     | Seq (e1, e2) ->
         ignore (w e1 env);
         w e2 env
+    | Constr (name, ex) -> construct_infer name ex env
     | Strct l -> struct_infer l env prog.types
     | GetF (e, x) -> (
         match w e env with
@@ -217,7 +225,6 @@ let type_inference prog =
             with Not_found -> Mmlerror.struct_no_field x)
         | TVar _ -> assert false
         | t -> Mmlerror.not_a_struct t)
-    | Constr (name, ex) -> construct_infer name ex env
   and struct_infer l env = function
     | [] ->
         Mmlerror.struct_construct_error
@@ -252,9 +259,11 @@ let type_inference prog =
                   try
                     List.iter2 (fun t1 t2 -> unify t1 t2) lt1 lt2;
                     Some cname
-                  with  Invalid_argument _ ->
-                    Mmlerror.nb_arg_construct id (List.length lt1)
-                          (List.length lt2)
+                  with Invalid_argument _ ->
+                    Mmlerror.nb_arg_construct
+                      id
+                      (List.length lt1)
+                      (List.length lt2)
                 else
                   iter_args l
           in
