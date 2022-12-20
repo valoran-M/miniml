@@ -33,8 +33,9 @@ let () =
     close_in c;
     (* ignore (Typechecker.type_prog prog); *)
     ignore (Typeinference.type_inference prog);
-    let output_value, _ = Interpreter.eval_prog prog in
-    Interpreter.print_value output_value
+    let output_value, mem = Interpreter.eval_prog prog in
+    Interpreter.print_value mem output_value;
+    print_newline ()
   with
   | Lexer.Lexing_error s ->
       report (lexeme_start_p lb, lexeme_end_p lb);

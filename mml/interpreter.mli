@@ -13,6 +13,6 @@ type heap_value =
     | VStrct of (string, value) Hashtbl.t
     | VConstr of string * value list
 
-val print_value : value -> unit
+val print_value : (int, heap_value) Hashtbl.t -> value -> unit
 
 val eval_prog : Mml.prog -> value * (int, heap_value) Hashtbl.t

@@ -10,18 +10,44 @@ type value =
     | VUnit
     | VPtr  of int
 
-(* Affiche les valeurs retourner par eval_prog *)
-let print_value = function
-  | VInt n  -> Printf.printf "%d\n" n
-  | VBool b -> Printf.printf "%b\n" b
-  | VUnit   -> Printf.printf "()\n"
-  | VPtr p  -> Printf.printf "@%d\n" p
-
 (* Élements du tas *)
 type heap_value =
     | VClos   of string * expr * value Env.t
     | VStrct  of (string, value) Hashtbl.t
     | VConstr of string * value list 
+
+(* Affiche les valeurs retourner par eval_prog *)
+let rec print_value mem = function
+  | VInt n  -> Printf.printf "%d" n
+  | VBool b -> Printf.printf "%b" b
+  | VUnit   -> Printf.printf "()"
+  | VPtr p  -> 
+      Printf.printf "@%d ->" p; 
+      print_value_in_mem p mem
+
+and print_value_in_mem p mem =
+  match Hashtbl.find mem p with 
+  | VClos (s, _, _) -> Printf.printf "%s" s 
+  | VStrct s -> print_struct mem s
+  | VConstr (s, v) -> 
+      Printf.printf "%s (" s;
+      print_list_value mem v
+
+and print_struct mem s =
+  Printf.printf "{ ";
+  Hashtbl.iter (fun id v -> Printf.printf "%s = " id; 
+                            print_value mem v; 
+                            Printf.printf "; ") s;
+  print_char '}'
+
+and print_list_value mem = function
+  | []      -> ()
+  | [v]     -> 
+      print_value mem v; 
+      print_char ')'
+  | v :: l  -> 
+      print_value mem v; 
+      print_list_value mem l
 
 (* Interprète un programme *)
 let eval_prog (prog : prog) : value * (int, heap_value) Hashtbl.t =
