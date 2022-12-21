@@ -12,9 +12,6 @@ type style =
 
     | Normal
 
-    | Underline
-    | Underline_off
-
     | Bold
     | Bold_off
 
@@ -31,7 +28,6 @@ let print_open_stag = ignore
 let print_close_stag = ignore
 
 let close_tag = function
-  | Underline -> Underline_off
   | Bold -> Bold_off
   | FG_Red -> FG_Default
   | _ -> Normal
@@ -39,8 +35,6 @@ let close_tag = function
 let style_of_tag = function
   | String_tag s -> begin match s with
       | "n"           -> Normal
-      | "underline"   -> Underline
-      | "/underline"  -> Underline_off
       | "bold"        -> Bold
       | "/bold"       -> Bold
 
@@ -54,8 +48,6 @@ let style_of_tag = function
 let to_ansi_value = function
   | Normal        -> "0"
   
-  | Underline     -> "4"
-  | Underline_off -> "24"
   | Bold          -> "1"
   | Bold_off      -> "22"
 
@@ -64,9 +56,11 @@ let to_ansi_value = function
 
 let ansi_tag = Printf.sprintf "\x1B[%sm"
 
-let start_mark_ansi_stag t = ansi_tag @@ to_ansi_value @@ style_of_tag t
+let start_mark_ansi_stag t = 
+  ansi_tag @@ to_ansi_value @@ style_of_tag t
 
-let stop_mark_ansi_stag t = ansi_tag @@ to_ansi_value @@ close_tag @@ style_of_tag t
+let stop_mark_ansi_stag t = 
+  ansi_tag @@ to_ansi_value @@ close_tag @@ style_of_tag t
 
 
 let add_ansi_marking formatter =
@@ -79,45 +73,73 @@ let add_ansi_marking formatter =
       mark_close_stag = stop_mark_ansi_stag 
     }
 
-let print_line f l fc fl =
-  let c = open_in f in
-  if(fc <> fl) then (
-    for _ = 1 to l - 1 do
-      ignore (input_line c)
-    done;
-    eprintf "%d | %s@." l (input_line c);
-    eprintf "%s" (String.make (3 + fc) ' ');
-    eprintf "@{<bold>@{<fg_red>%s@}@}@." (String.make (fl - fc) '^')
-  )
+let print_prog_lines c fl ll fc lc =
+  let make_alig i = 
+    String.make 
+      ((int_of_float (log10 (float_of_int ll))) - 
+      (int_of_float (log10 (float_of_int i)))) ' '
+  in
+  let line = input_line c in
+  let start = String.make (fc) '.' in
+  eprintf "%s%d | %s%s@." 
+    (make_alig fl) fl start 
+    (String.sub line fc (String.length line - fc));
+  for i = fl + 1 to ll - 1 do
+    eprintf "%s%d | %s@." (make_alig i) i (input_line c)
+  done;
+  let line = input_line c in
+  let start = String.sub line 0 lc in
+  eprintf "%d | %s%s@." 
+    ll start
+    (String.make (String.length line - lc) '.')
 
-let report file (l, fc, lc) =
-  eprintf "@{<bold>File \"%s\", line %d, characters %d-%d:@}\n" file l fc lc
+let print_prog f (fl, ll, fc, lc) =
+  let c = open_in f in
+  (* got to line fl *)
+  for _ = 1 to fl - 1 do
+    ignore (input_line c)
+  done;
+  if fl = ll then (
+    if(fc <> lc) then (
+        eprintf "%d | %s@." fl (input_line c);
+        eprintf "%s" (String.make (4 + fc) ' ');
+        eprintf "@{<bold>@{<fg_red>%s@}@}@." (String.make (lc - fc) '^')
+      )
+  )else
+    print_prog_lines c fl ll fc lc
+
+let report file (fl, ll, fc, lc) =
+  if fl <> ll then  
+    eprintf "@{<bold>File \"%s\", line %d-%d, characters %d-%d:@}\n" 
+      file fl ll fc lc
+  else
+    eprintf "@{<bold>File \"%s\", line %d, characters %d-%d:@}\n" 
+      file fl fc lc
 
 let print_unclosed_error file l fc lc s =
   add_ansi_marking err_formatter;
-  report file (l ,fc ,lc);
-  print_line file l fc lc;
+  report file (l, l ,fc ,lc);
+  print_prog file (l, l, fc, lc);
   eprintf "@{<bold>@{<fg_red>Error@}@}: lexical error: %s@." s
+
+let pose_lex ps pe =
+  (ps.pos_lnum
+  , pe.pos_lnum
+  , ps.pos_cnum - ps.pos_bol
+  , pe.pos_cnum - pe.pos_bol)
 
 let print_syntax_err file lb =
   add_ansi_marking err_formatter;
-  let pose_s = (lexeme_start_p lb) in
-  let fc = pose_s.pos_cnum - pose_s.pos_bol + 1 in
-  let pose_e = (lexeme_end_p lb) in
-  let lc = pose_e.pos_cnum - pose_e.pos_bol + 1 in
-  report file (pose_e.pos_lnum, fc, lc);
-  print_line file pose_e.pos_lnum fc lc;
+  let ls, ll, fc, lc = pose_lex (lexeme_start_p lb) (lexeme_end_p lb) in
+  report file (ls, ll, fc, lc);
+  print_prog file (ls, ll, fc, lc);
   eprintf "@{<bold>@{<fg_red>Error@}@}: syntax error@."
 
 
 let print_type_error file e s = 
   add_ansi_marking err_formatter;
-  let pose_s = e.loc.fc in
-  let fc = pose_s.pos_cnum - pose_s.pos_bol + 1 in
-  let pose_e = e.loc.lc in
-  let lc = pose_e.pos_cnum - pose_e.pos_bol + 1 in
-  report file (pose_e.pos_lnum, fc, lc);
-  print_line file pose_e.pos_lnum fc lc;
+  let ls, ll, fc, lc = pose_lex e.loc.fc e.loc.lc in
+  report file (ls, ll, fc, lc);
+  print_prog file (ls, ll, fc, lc);
   eprintf "@{<bold>@{<fg_red>Error@}@}: @[%s@]@." s
-
 

@@ -25,7 +25,7 @@ let type_prog prog =
     if typ_e <> typ then Error.type_error typ_e typ
   (* Calcule le type de l'expression [e] *)
   and type_expr e tenv =
-    match e with
+    match e.expr with
     | Int _ -> TInt
     | Bool _ -> TBool
     | Unit -> TUnit

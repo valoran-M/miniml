@@ -12,8 +12,8 @@ let type_error e ty_actual ty_expected =
     (Printf.sprintf
        "This expression has type %s but an expression was expected of type\n\
          \t%s"
-       (Mmlpp.typ_to_string ty_expected)
-       (Mmlpp.typ_to_string ty_actual))
+       (Mmlpp.typ_to_string ty_actual)
+       (Mmlpp.typ_to_string ty_expected))
 
 (* unclosed *)
 let raise_unclosed l s = 
@@ -72,4 +72,4 @@ let nb_arg_construct e name n1 n2 =
        name n1 n2)
 
 let compare_fun e  = 
-  raise_type_error e "compare: functional value"
+  raise_type_error e "compare functional value"

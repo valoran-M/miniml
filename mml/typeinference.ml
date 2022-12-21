@@ -80,11 +80,11 @@ let type_inference prog =
     | TVar a, TVar b when a = b -> ()
     | TVar a, t | t, TVar a ->
         if occur a t then
-          Error.type_error e t1 t2
+          Error.type_error e (unfold_full t1) (unfold_full t2)
         else
           Hashtbl.add subst a t
     | t1, t2 ->
-        Error.type_error e t1 t2
+        Error.type_error e (unfold_full t1) (unfold_full t2)
   in
 
   let instantiate s =
@@ -136,10 +136,15 @@ let type_inference prog =
         unify e2 t2 TInt;
         TBool
     | Bop ((Equ   | Nequ 
-          | Sequ  | Snequ
-          | Or    | And), e1, e2) ->
+          | Sequ  | Snequ), e1, e2) ->
         let t = w e1 env in
         unify e1 t (w e2 env);
+        TBool
+    | Bop ((Or | And), e1, e2) ->
+        let t1 = w e1 env in
+        unify e1 t1 TBool;
+        let t2 = w e2 env in 
+        unify e2 t2 TBool;
         TBool
     | Int _ -> TInt
     | Uop (Neg, e) ->
@@ -151,7 +156,7 @@ let type_inference prog =
           | Mul | Div), e1, e2) ->
         let t1 = w e1 env in
         let t2 = w e2 env in
-        unify e2 t1 TInt;
+        unify e1 t1 TInt;
         unify e2 t2 TInt;
         TInt
     | Var s -> instantiate (SMap.find s env)
@@ -181,12 +186,19 @@ let type_inference prog =
             let env = SMap.add x { vars = VSet.empty; typ = t } env in
             let te = w e env in
             TFun (t, te))
-    | App (e1, e2) ->
-        let t1 = w e1 env in
-        let t2 = w e2 env in
-        let v = TVar (new_var ()) in
-        unify e1 t1 (TFun (t2, v));
-        v
+    | App (e1, e2) ->(
+        let t = w e1 env in
+        match t with 
+        | TFun(t1, t1') ->
+            let t2 = w e2 env in
+            unify e2 t2 t1;
+            t1'
+        | TVar _ -> 
+            let t1 = new_var () in 
+            let t2 = new_var () in
+            unify e t (TFun(TVar t1, TVar t2));
+            TVar t2
+        | t -> Error.not_a_function e1 t)
     | Fix (s, t, e) -> (
         match t with
         | None ->
