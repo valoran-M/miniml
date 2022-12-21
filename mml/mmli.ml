@@ -24,8 +24,8 @@ let () =
   try
     let prog = Parser.program Lexer.pattern lb in
     close_in c;
-    (* ignore (Typechecker.type_prog prog); *)
-    ignore (Typeinference.type_inference prog);
+    ignore (Typechecker.type_prog prog);
+    (* ignore (Typeinference.type_inference prog); *)
     let output_value, mem = Interpreter.eval_prog prog in
     Interpreter.print_value mem output_value;
     print_newline ()

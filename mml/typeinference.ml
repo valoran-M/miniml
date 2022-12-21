@@ -235,7 +235,7 @@ let type_inference prog =
               if m then
                 TUnit
               else
-                Error.is_not_mutable e2 s x
+                Error.is_not_mutable e s x
             with Not_found -> Error.struct_no_field e x)
         | TVar _ -> assert false
         | t -> Error.not_a_struct e1 t)

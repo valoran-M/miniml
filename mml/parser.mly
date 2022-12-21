@@ -88,7 +88,6 @@
 
 (* Prioritées *)
 %nonassoc IN                    (* let ... in ... *)
-%nonassoc IDENT CST BOOL
 %left     SEMI                  (* { id1 = e1; ... idn = en } *)
 %nonassoc L_ARROW
 %nonassoc R_ARROW               (* type(t -> t -> t) *)
@@ -108,7 +107,8 @@
 
 %nonassoc prec_constr_empty     (* C vs C (x) *)
 (* Autres *)
-%nonassoc S_PAR S_BRACE CONSTR
+%nonassoc S_PAR S_BRACE CONSTR 
+          IDENT CST BOOL
 
 %%
 

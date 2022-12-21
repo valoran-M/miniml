@@ -43,9 +43,11 @@ let struct_construct_error e l =
        "The structure of the form {%s} does not exist"
        (print_struct l))
 
-let struct_no_field e s =
+let struct_no_field e t s =
   raise_type_error e 
-    (Printf.sprintf "The struct a has no field %s\n" s)
+    (Printf.sprintf 
+      "This expression hase type %s There is no field %s within type %s\n" 
+      t s t)
 
 let not_a_struct e s =
   raise_type_error e

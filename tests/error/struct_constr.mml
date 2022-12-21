@@ -1,1 +1,3 @@
+type s = {s: int; }
 
+let s = {s = 3;} in s.c
