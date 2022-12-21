@@ -32,9 +32,9 @@ let type_inference prog =
     | _ -> assert false
   in
 
-  let get_struct_args x =
+  let get_struct_args e x =
     let rec aux = function
-      | [] -> Error.struct_no_field x
+      | [] -> Error.struct_no_field e x
       | (s, StrctDef arg) :: l -> (
           try
             let _, t, _ = (List.find (fun (id, _, _) -> id = x)) arg in
@@ -68,23 +68,23 @@ let type_inference prog =
     | _ -> false
   in
 
-  let rec unify t1 t2 =
+  let rec unify e t1 t2 =
     match (unfold t1, unfold t2) with
     | TInt, TInt -> ()
     | TBool, TBool -> ()
     | TUnit, TUnit -> ()
     | TDef s1, TDef s2 when s1 = s2 -> ()
     | TFun (t1, t1'), TFun (t2, t2') ->
-        unify t1 t2;
-        unify t1' t2'
+        unify e t1 t2;
+        unify e t1' t2'
     | TVar a, TVar b when a = b -> ()
     | TVar a, t | t, TVar a ->
         if occur a t then
-          Error.type_error t1 t2
+          Error.type_error e t1 t2
         else
           Hashtbl.add subst a t
     | t1, t2 ->
-        Error.type_error t1 t2
+        Error.type_error e t1 t2
   in
 
   let instantiate s =
@@ -121,38 +121,38 @@ let type_inference prog =
     { vars = VSet.diff fvt fvenv; typ = t }
   in
 
-  let rec w (e : expr) env =
-    match e with
+  let rec w (e : expr_loc) env =
+    match e.expr with
     | Unit -> TUnit
     | Bool _ -> TBool
     | Uop (Not, e) ->
         let t = w e env in
-        unify t TBool;
+        unify e t TBool;
         TBool
     | Bop ((Le | Lt), e1, e2) ->
         let t1 = w e1 env in
         let t2 = w e2 env in
-        unify t1 TInt;
-        unify t2 TInt;
+        unify e1 t1 TInt;
+        unify e2 t2 TInt;
         TBool
     | Bop ((Equ   | Nequ 
           | Sequ  | Snequ
           | Or    | And), e1, e2) ->
         let t = w e1 env in
-        unify t (w e2 env);
+        unify e1 t (w e2 env);
         TBool
     | Int _ -> TInt
     | Uop (Neg, e) ->
         let t = w e env in
-        unify t TInt;
+        unify e t TInt;
         TInt
     | Bop ((Add | Sub 
           | Mod 
           | Mul | Div), e1, e2) ->
         let t1 = w e1 env in
         let t2 = w e2 env in
-        unify t1 TInt;
-        unify t2 TInt;
+        unify e2 t1 TInt;
+        unify e2 t2 TInt;
         TInt
     | Var s -> instantiate (SMap.find s env)
     | Let (s, e1, e2) ->
@@ -160,10 +160,15 @@ let type_inference prog =
         let st1 = generalize t1 env in
         let env' = SMap.add s st1 env in
         w e2 env'
-    | If (c, e1, e2) ->
-        unify (w c env) TBool;
+    | If (c, e1, Some e2) ->
+        unify e1 (w c env) TBool;
         let t = w e1 env in
-        unify t (w e2 env);
+        unify e2 t (w e2 env);
+        t
+    | If (c, e, None) ->
+        unify c (w c env) TBool;
+        let t = w e env in
+        unify e t TUnit;
         t
     | Fun (x, t, e) -> (
         match t with
@@ -180,7 +185,7 @@ let type_inference prog =
         let t1 = w e1 env in
         let t2 = w e2 env in
         let v = TVar (new_var ()) in
-        unify t1 (TFun (t2, v));
+        unify e1 t1 (TFun (t2, v));
         v
     | Fix (s, t, e) -> (
         match t with
@@ -194,8 +199,8 @@ let type_inference prog =
     | Seq (e1, e2) ->
         ignore (w e1 env);
         w e2 env
-    | Constr (name, ex) -> construct_infer name ex env
-    | Strct l -> struct_infer l env types
+    | Constr (name, ex) -> construct_infer e name ex env
+    | Strct l -> struct_infer e l env types
     | GetF (e, x) -> (
         match w e env with
         | TDef s -> (
@@ -203,36 +208,36 @@ let type_inference prog =
             try
               let _, t, _ = (List.find (fun (id, _, _) -> id = x)) st in
               t
-            with Not_found -> Error.struct_no_field x)
+            with Not_found -> Error.struct_no_field e x)
         | TVar _ ->
-            let _, t = get_struct_args x in
+            let _, t = get_struct_args e x in
             t
-        | t -> Error.not_a_struct t)
+        | t -> Error.not_a_struct e t)
     | SetF (e1, x, e2) -> (
         match w e1 env with
         | TDef s -> (
             let st = get_struct_with_name s in
             try
               let _, t, m = (List.find (fun (id, _, _) -> id = x)) st in
-              unify (w e2 env) t;
+              unify e2 (w e2 env) t;
               if m then
                 TUnit
               else
-                Error.is_not_mutable s x
-            with Not_found -> Error.struct_no_field x)
+                Error.is_not_mutable e2 s x
+            with Not_found -> Error.struct_no_field e x)
         | TVar _ -> assert false
-        | t -> Error.not_a_struct t)
-  and struct_infer l env = function
+        | t -> Error.not_a_struct e1 t)
+  and struct_infer e l env = function
     | [] ->
-        Error.struct_construct_error
+        Error.struct_construct_error e
           (List.map (fun (n, e) -> (n, w e env)) l)
-    | (_, ConstrDef _) :: ld -> struct_infer l env ld
+    | (_, ConstrDef _) :: ld -> struct_infer e l env ld
     | (name, StrctDef s) :: ld -> (
         let rec iter_args = function
           | (id1, e) :: l1, (id2, t, _) :: l2 ->
               if id1 = id2 then
                 try
-                  unify t (w e env);
+                  unify e t (w e env);
                   iter_args (l1, l2)
                 with Failure _ -> None
               else
@@ -242,18 +247,18 @@ let type_inference prog =
         in
         match iter_args (l, s) with
         | Some name -> TDef name
-        | None -> struct_infer l env ld)
-  and construct_infer name l env =
-    let lt2 = List.map (fun e -> w e env) l in
+        | None -> struct_infer e l env ld)
+  and construct_infer e name l env =
+    let lt2 = List.map (fun e -> (w e env, e)) l in
     let rec iter_args cname = function
       | [] -> None
       | (id, lt1) :: l ->
           if name = id then
             try
-              List.iter2 (fun t1 t2 -> unify t1 t2) lt1 lt2;
+              List.iter2 (fun t1 (t2, loc) -> unify loc t1 t2) lt1 lt2;
               Some cname
             with Invalid_argument _ ->
-              Error.nb_arg_construct
+              Error.nb_arg_construct e
                 id
                 (List.length lt1)
                 (List.length lt2)
@@ -261,7 +266,9 @@ let type_inference prog =
             iter_args cname l
     in
     let rec aux = function
-      | [] -> Error.unbound_construct name lt2
+      | [] -> 
+          let lt2 = List.map fst lt2 in
+          Error.unbound_construct e name lt2
       | (_, StrctDef _) :: ld -> aux ld
       | (cname, ConstrDef a) :: ld -> (
         match iter_args cname a with

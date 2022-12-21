@@ -1,3 +1,4 @@
 type t1 = | Some of int
 
-let t = Some(2) in 
+let t = Some(true) in 3
+

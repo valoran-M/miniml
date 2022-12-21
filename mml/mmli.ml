@@ -30,14 +30,14 @@ let () =
     Interpreter.print_value mem output_value;
     print_newline ()
   with
-  | Lexer.Lexing_error s ->
-      Errorcat.print_lexing_error file lb s;
+  | Error.Error (Unclosed (l, fc, lc, s)) ->
+      Errorcat.print_unclosed_error file l fc lc s;
       exit 1
   | Parser.Error ->
       Errorcat.print_syntax_err file lb;
       exit 1
-  | Error.Error (Type_error s) ->
-      eprintf "type error: %s@." s;
+  | Error.Error (Type_error (e, s)) ->
+      Errorcat.print_type_error file e s;
       exit 1
   | e ->
       eprintf "Anomaly: %s\n@." (Printexc.to_string e);

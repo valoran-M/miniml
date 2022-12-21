@@ -1,4 +1,3 @@
-open Lexing
 open Format
 
 let usage = "usage: ./mmlcat file.mml"
@@ -19,12 +18,6 @@ let file =
       Arg.usage spec usage;
       exit 1
 
-let report (b, e) =
-  let l = b.pos_lnum in
-  let fc = b.pos_cnum - b.pos_bol + 1 in
-  let lc = e.pos_cnum - b.pos_bol + 1 in
-  eprintf "File \"%s\", line %d, characters %d-%d:\n" file l fc lc
-
 let () =
   let c = open_in file in
   let lb = Lexing.from_channel c in
@@ -37,13 +30,11 @@ let () =
     Mmlpp.print_prog outf prog;
     close_out out
   with
-  | Lexer.Lexing_error s ->
-      report (lexeme_start_p lb, lexeme_end_p lb);
-      eprintf "lexical error: %s@." s;
+  | Error.Error (Unclosed (l, fc, lc, s)) ->
+      Errorcat.print_unclosed_error file l fc lc s;
       exit 1
   | Parser.Error ->
-      report (lexeme_start_p lb, lexeme_end_p lb);
-      eprintf "syntax error@.";
+      Errorcat.print_syntax_err file lb;
       exit 1
   | e ->
       eprintf "Anomaly: %s\n@." (Printexc.to_string e);

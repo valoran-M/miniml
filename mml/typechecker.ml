@@ -30,57 +30,61 @@ let type_prog prog =
     | Bool _ -> TBool
     | Unit -> TUnit
     | Uop (Neg, e) ->
-        check e TInt tenv;
+        check e.expr TInt tenv;
         TInt
     | Uop (Not, e) ->
-        check e TBool tenv;
+        check e.expr TBool tenv;
         TBool
     | Bop ((Add | Sub | Mod | Mul | Div), e1, e2) ->
-        check e1 TInt tenv;
-        check e2 TInt tenv;
+        check e1.expr TInt tenv;
+        check e2.expr TInt tenv;
         TInt
     | Bop ((Or | And), e1, e2) ->
-        check e1 TInt tenv;
-        check e2 TInt tenv;
+        check e1.expr TInt tenv;
+        check e2.expr TInt tenv;
         TBool
     | Bop ((Equ   | Nequ
           | Sequ  | Snequ
           | Lt    | Le), e1, e2) ->
-        check e1 (type_expr e2 tenv) tenv;
+        check e1.expr (type_expr e2.expr tenv) tenv;
         TBool
     | Var s -> SymTbl.find s tenv
     | Let (s, e1, e2) ->
-        let t1 = type_expr e1 tenv in
-        type_expr e2 (SymTbl.add s t1 tenv)
-    | If (c, e1, e2) ->
-        check c TBool tenv;
-        let t2 = type_expr e2 tenv in
-        check e1 t2 tenv;
+        let t1 = type_expr e1.expr tenv in
+        type_expr e2.expr (SymTbl.add s t1 tenv)
+    | If (c, e1, Some e2) ->
+        check c.expr TBool tenv;
+        let t2 = type_expr e2.expr tenv in
+        check e1.expr t2 tenv;
         t2
-    | Fun (id, Some t, e) -> TFun (t, type_expr e (SymTbl.add id t tenv))
+    | If (c, e1, None) ->
+        check c.expr TBool tenv;
+        check e1.expr TUnit tenv;
+        TUnit
+    | Fun (id, Some t, e) -> TFun (t, type_expr e.expr (SymTbl.add id t tenv))
     | Fun (_, None, _) -> assert false
     | App (e1, e2) -> (
-        match type_expr e1 tenv with
+        match type_expr e1.expr tenv with
         | TFun (t1, t2) ->
-            check e2 t1 tenv;
+            check e2.expr t1 tenv;
             t2
         | t -> Error.not_a_function t)
-    | Fix (s, Some t, e) -> type_expr e (SymTbl.add s t tenv)
+    | Fix (s, Some t, e) -> type_expr e.expr (SymTbl.add s t tenv)
     | Fix (_, None, _) -> assert false
     | Seq (e1, e2) ->
-        let _ = type_expr e1 tenv in
-        type_expr e2 tenv
+        let _ = type_expr e1.expr tenv in
+        type_expr e2.expr tenv
     | Strct l ->
         let rec stuct_construct = function
           | [] ->
               Error.struct_construct_error
-                (List.map (fun (n, e) -> (n, type_expr e tenv)) l)
+                (List.map (fun (n, e) -> (n, type_expr e.expr tenv)) l)
           | (_, ConstrDef _) :: ld -> stuct_construct ld
           | (name, StrctDef s) :: ld -> (
               let rec iter_args = function
                 | (id1, e) :: l1, (id2, t, _) :: l2 ->
                     if id1 = id2 then
-                      if t <> type_expr e tenv then
+                      if t <> type_expr e.expr tenv then
                         None
                       else
                         iter_args (l1, l2)
@@ -95,7 +99,7 @@ let type_prog prog =
         in
         stuct_construct prog.types
     | GetF (e, x) -> (
-        match type_expr e tenv with
+        match type_expr e.expr tenv with
         | TDef s -> (
             let st = get_struct s in
             try
@@ -104,12 +108,12 @@ let type_prog prog =
             with Not_found -> Error.struct_no_field s)
         | t -> Error.not_a_struct t)
     | SetF (e1, x, e2) -> (
-        match type_expr e1 tenv with
+        match type_expr e1.expr tenv with
         | TDef s -> (
             let st = get_struct s in
             try
               let _, t, m = (List.find (fun (id, _, _) -> id = x)) st in
-              check e2 t tenv;
+              check e2.expr t tenv;
               if m then
                 TUnit
               else
@@ -117,7 +121,7 @@ let type_prog prog =
             with Not_found -> Error.struct_no_field x)
         | t -> Error.not_a_struct t)
     | Constr (name, ex) ->
-        let lt1 = List.map (fun e -> type_expr e tenv) ex in
+        let lt1 = List.map (fun e -> type_expr e.expr tenv) ex in
         let rec iter_args cname = function
           | [] -> None
           | (id, lt2) :: l ->
@@ -145,4 +149,4 @@ let type_prog prog =
         constr_type types
   in
 
-  type_expr prog.code SymTbl.empty
+  type_expr prog.code.expr SymTbl.empty 

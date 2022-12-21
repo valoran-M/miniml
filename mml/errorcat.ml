@@ -1,5 +1,6 @@
 open Format
 open Lexing
+open Mml
 
 (* J'ai suivi cet article:
    https://ocamlpro.com/fr/blog/2020_06_01_fr_tutoriel_format
@@ -78,17 +79,45 @@ let add_ansi_marking formatter =
       mark_close_stag = stop_mark_ansi_stag 
     }
 
-let report file (b, e) =
-  let l = b.pos_lnum in
-  let fc = b.pos_cnum - b.pos_bol + 1 in
-  let lc = e.pos_cnum - b.pos_bol + 1 in
+let print_line f l fc fl =
+  let c = open_in f in
+  if(fc <> fl) then (
+    for _ = 1 to l - 1 do
+      ignore (input_line c)
+    done;
+    eprintf "%d | %s@." l (input_line c);
+    eprintf "%s" (String.make (3 + fc) ' ');
+    eprintf "@{<bold>@{<fg_red>%s@}@}@." (String.make (fl - fc) '^')
+  )
+
+let report file (l, fc, lc) =
   eprintf "@{<bold>File \"%s\", line %d, characters %d-%d:@}\n" file l fc lc
 
-let print_lexing_error file lb s =
-  report file (lexeme_start_p lb, lexeme_end_p lb);
-  eprintf "lexical error: %s@." s
+let print_unclosed_error file l fc lc s =
+  add_ansi_marking err_formatter;
+  report file (l ,fc ,lc);
+  print_line file l fc lc;
+  eprintf "@{<bold>@{<fg_red>Error@}@}: lexical error: %s@." s
 
 let print_syntax_err file lb =
   add_ansi_marking err_formatter;
-  report file (lexeme_start_p lb, lexeme_end_p lb);
-  eprintf "@{<bold>@{<fg_red>Error@}@}: syntax error@.";
+  let pose_s = (lexeme_start_p lb) in
+  let fc = pose_s.pos_cnum - pose_s.pos_bol + 1 in
+  let pose_e = (lexeme_end_p lb) in
+  let lc = pose_e.pos_cnum - pose_e.pos_bol + 1 in
+  report file (pose_e.pos_lnum, fc, lc);
+  print_line file pose_e.pos_lnum fc lc;
+  eprintf "@{<bold>@{<fg_red>Error@}@}: syntax error@."
+
+
+let print_type_error file e s = 
+  add_ansi_marking err_formatter;
+  let pose_s = e.loc.fc in
+  let fc = pose_s.pos_cnum - pose_s.pos_bol + 1 in
+  let pose_e = e.loc.lc in
+  let lc = pose_e.pos_cnum - pose_e.pos_bol + 1 in
+  report file (pose_e.pos_lnum, fc, lc);
+  print_line file pose_e.pos_lnum fc lc;
+  eprintf "@{<bold>@{<fg_red>Error@}@}: @[%s@]@." s
+
+

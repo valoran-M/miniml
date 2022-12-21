@@ -10,8 +10,8 @@ type typ =
 type enum = string list
 
 type tDef = 
-    | StrctDef      of (string * typ * bool) list
-    | ConstrDef     of (string * typ list) list
+    | StrctDef      of (string * typ * bool)  list
+    | ConstrDef     of (string * typ list)    list
 
 type uop = Neg | Not
 
@@ -26,25 +26,32 @@ type bop =
     | Le    | Lt
     | Or    | And
 
+type location = 
+  { fc  : Lexing.position
+  ; lc  : Lexing.position}
+
 type expr =
     | Int     of int
     | Bool    of bool
     | Unit
-    | Uop     of uop * expr
-    | Bop     of bop * expr * expr
+    | Uop     of uop * expr_loc
+    | Bop     of bop * expr_loc * expr_loc
     | Var     of string
-    | If      of expr * expr * expr
-    | Let     of string * expr * expr
-    | Fun     of string * typ option * expr
-    | App     of expr * expr
-    | Fix     of string * typ option * expr
-    | Strct   of (string * expr) list
-    | GetF    of expr * string
-    | SetF    of expr * string * expr
-    | Seq     of expr * expr
-    | Constr  of string * expr list
+    | If      of expr_loc * expr_loc * expr_loc option
+    | Let     of string * expr_loc * expr_loc
+    | Fun     of string * typ option * expr_loc
+    | App     of expr_loc * expr_loc
+    | Fix     of string * typ option * expr_loc
+    | Strct   of (string * expr_loc) list
+    | GetF    of expr_loc * string
+    | SetF    of expr_loc * string * expr_loc
+    | Seq     of expr_loc * expr_loc
+    | Constr  of string * expr_loc list
 
-type prog = {
-    types : (string * tDef) list;
-    code : expr;
-  }
+and expr_loc =
+  { loc : location
+  ; expr: expr}
+
+type prog = 
+  {types : (string * tDef) list
+  ; code : expr_loc}

@@ -57,42 +57,47 @@ let rec print_expr ppf = function
   | Unit -> fprintf ppf "()"
   | Var x -> fprintf ppf "%s" x
   | Fun (x, Some t, e) ->
-      fprintf ppf "fun (%s: %s) -> %a" x (typ_to_string t) print_expr e
-  | Fun (x, None, e) -> fprintf ppf "fun (%s) -> %a" x print_expr e
+      fprintf ppf "fun (%s: %s) -> %a" x (typ_to_string t) print_expr e.expr
+  | Fun (x, None, e) -> fprintf ppf "fun (%s) -> %a" x print_expr e.expr
   | Let (x, e1, e2) ->
       fprintf ppf "@[<hv 10>(let %s =@ %a in@.%a)@]"
-        x print_expr e1
-        print_expr e2
-  | App (e1, e2) -> fprintf ppf "(%a %a)" print_expr e1 print_expr e2
-  | Uop (op, e) -> fprintf ppf "(@[%s %a@])" (uop_to_string op) print_expr e
+        x print_expr e1.expr
+        print_expr e2.expr
+  | App (e1, e2) -> fprintf ppf "(%a %a)" print_expr e1.expr print_expr e2.expr
+  | Uop (op, e) -> fprintf ppf "(@[%s %a@])" (uop_to_string op) print_expr e.expr
   | Bop (op, e1, e2) ->
       fprintf ppf "(@[%a %s %a)@]"
-        print_expr e1
+        print_expr e1.expr
         (bop_to_string op)
-        print_expr e2
-  | If (c, e1, e2) ->
+        print_expr e2.expr
+  | If (c, e1, Some e2) ->
       fprintf ppf "@[if %a then@. @[<hv 2>%a@]@ else @[<hv 2>%a@]@]"
-        print_expr c
-        print_expr e1
-        print_expr e2
-  | Seq (e1, e2) -> fprintf ppf "@[<v>%a;@ %a@]" print_expr e1 print_expr e2
+        print_expr c.expr
+        print_expr e1.expr
+        print_expr e2.expr
+  | If (c, e1, None ) ->
+      fprintf ppf "@[if %a then@. @[<hv 2>%a@]@ else @[<hv 2>()@]@]"
+        print_expr c.expr
+        print_expr e1.expr
+  | Seq (e1, e2) -> 
+      fprintf ppf "@[<v>%a;@ %a@]" print_expr e1.expr print_expr e2.expr
   | Strct l -> fprintf ppf "{ @[%a}@]" print_defs l;
-  | GetF (e, x) -> fprintf ppf "(%a).%s" print_expr e x
+  | GetF (e, x) -> fprintf ppf "(%a).%s" print_expr e.expr x
   | SetF (e1, x, e2) ->
-      fprintf ppf "(%a).%s <- %a" print_expr e1 x print_expr e2
+      fprintf ppf "(%a).%s <- %a" print_expr e1.expr x print_expr e2.expr
   | Fix (x, Some t, e) ->
-      fprintf ppf "fix (%s: %s) = (%a)" x (typ_to_string t) print_expr e
-  | Fix (x, None, e) -> fprintf ppf "fix (%s) = (%a)" x print_expr e
+      fprintf ppf "fix (%s: %s) = (%a)" x (typ_to_string t) print_expr e.expr
+  | Fix (x, None, e) -> fprintf ppf "fix (%s) = (%a)" x print_expr e.expr
   | Constr (s, e) -> fprintf ppf "%s (%a)" s print_list_expr e
 
 and print_list_expr ppf = function
   | [] -> fprintf ppf ""
-  | [ e ] -> fprintf ppf "%a" print_expr e
-  | e :: l -> fprintf ppf "%a, %a" print_expr e print_list_expr l
+  | [ e ] -> fprintf ppf "%a" print_expr e.expr
+  | e :: l -> fprintf ppf "%a, %a" print_expr e.expr print_list_expr l
 
 and print_defs ppf = function
   | [] -> fprintf ppf ""
-  | (x, e) :: l -> fprintf ppf "%s = %a; %a" x print_expr e print_defs l
+  | (x, e) :: l -> fprintf ppf "%s = %a; %a" x print_expr e.expr print_defs l
 
 let print_prog ppf prog =
-  fprintf ppf "%a@.%a@." print_types prog.types print_expr prog.code
+  fprintf ppf "%a@.%a@." print_types prog.types print_expr prog.code.expr

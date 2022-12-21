@@ -1,10 +1,16 @@
 %{
     open Mml
 
+    let mk_loc (fc, lc) = 
+      {fc = fc; lc = lc}
+
+    let mk_expr loc expr =
+      {loc = mk_loc loc; expr}
+
     let rec mk_fun params expr = 
         match params with
         | []            -> expr
-        | (id, t) :: l  -> Fun(id, t, mk_fun l expr)
+        | (loc, id, t) :: l  -> mk_expr loc (Fun(id, t, mk_fun l expr))
 
     let mk_fun_type xs t = 
       match t with
@@ -19,8 +25,8 @@
           in
           match xs with
           | [] -> t
-          | (_, Some t')::xs -> TFun(t', aux xs t)
-          | (_, None)::xs -> TFun (TVar (new_var ()), aux xs t)
+          | (_, _, Some t')::xs -> TFun(t', aux xs t)
+          | (_, _, None)::xs -> TFun (TVar (new_var ()), aux xs t)
         in 
         Some (aux xs t)
 %}
@@ -29,7 +35,6 @@
 %token <string> IDENT       "x"
 %token <bool> BOOL          "b"
 %token <int> CST            "n"
-%token UNIT_P               "()"
 (* Types *)
 %token T_INT    "int"
 %token T_BOOL   "bool"
@@ -78,11 +83,12 @@
 
 %start program
 %type <Mml.prog> program
+%type <Mml.expr_loc> expression
 
 
 (* Prioritées *)
 %nonassoc IN                    (* let ... in ... *)
-%nonassoc UNIT_P IDENT CST BOOL
+%nonassoc IDENT CST BOOL
 %left     SEMI                  (* { id1 = e1; ... idn = en } *)
 %nonassoc L_ARROW
 %nonassoc R_ARROW               (* type(t -> t -> t) *)
@@ -112,35 +118,35 @@ program:
 ;
 
 simple_expression:
-    | n=CST                                                 { Int n }
-    | b=BOOL                                                { Bool b }
-    | UNIT_P                                                { Unit }
-    | id=IDENT                                              { Var (id) }
+    | n=CST                                                 { mk_expr $sloc (Int n) }
+    | b=BOOL                                                { mk_expr $sloc (Bool b) }
+    | S_PAR E_PAR                                           { mk_expr $sloc Unit }
+    | id=IDENT                                              { mk_expr $sloc (Var (id)) }
     | S_PAR e=expression E_PAR                              { e }
-    | e=simple_expression DOT id=IDENT                      { GetF (e, id) }
-    | S_BRACE a=nonempty_list(body_struct) E_BRACE          { Strct a }
-    | id=CONSTR l=constr_param                              { Constr (id, l) }
+    | e=simple_expression DOT id=IDENT                      { mk_expr $sloc (GetF (e, id)) }
+    | S_BRACE a=nonempty_list(body_struct) E_BRACE          { mk_expr $sloc (Strct a) }
+    | id=CONSTR l=constr_param                              { mk_expr $sloc (Constr (id, l)) }
 ;
 
 expression:
     | e=simple_expression                   { e }
-    | op=uop e=expression                   { Uop(op, e) }
-    | e1=expression op=binop e2=expression  { Bop(op, e1, e2) }
-    | e=expression se=simple_expression     { App(e, se) }
-    | IF c=expression THEN e=expression     { If(c, e, Unit) }
+    | op=uop e=expression                   { mk_expr $sloc (Uop(op, e)) }
+    | e1=expression op=binop e2=expression  { mk_expr $sloc (Bop(op, e1, e2)) }
+    | e=expression se=simple_expression     { mk_expr $sloc (App(e, se)) }
+    | IF c=expression THEN e=expression     { mk_expr $sloc (If(c, e, None)) }
     | IF c=expression THEN e1=expression 
-                      ELSE e2=expression    { If(c, e1, e2) }
+                      ELSE e2=expression    { mk_expr $sloc (If(c, e1, Some e2)) }
     | FUN a=fun_argument 
-        R_ARROW e=expression                { Fun(fst a, snd a, e) }
+        R_ARROW e=expression                
+          { let _, id, t = a in 
+            mk_expr $sloc (Fun(id, t, e)) 
+          }
     | e1=simple_expression DOT id=IDENT 
-        L_ARROW e2=expression               { SetF(e1, id, e2) }
-    | e1=expression SEMI e2=expression      { Seq(e1, e2) }
-    | e=let_expr                            { e }
+        L_ARROW e2=expression               { mk_expr $sloc (SetF(e1, id, e2)) }
+    | e1=expression SEMI e2=expression      { mk_expr $sloc (Seq(e1, e2)) }
+    | e=let_expr                            { mk_expr $sloc e }
     
 ;
-
-%inline fun_argument:
-  a=let_argument  { a }
 
 (* types *)
 types:
@@ -165,18 +171,22 @@ typdes_def:
     | LET REC id=IDENT a=list(let_argument) 
         t=option(type_forcing) S_EQ 
         e1=expression IN 
-        e2=expression                       { 
-                                                Let(id, Fix(id, 
-                                                            mk_fun_type a t,
-                                                            mk_fun a e1), e2) 
-                                            }
+        e2=expression                       
+        { 
+          Let(id, mk_expr $sloc (Fix(id, 
+                mk_fun_type a t,
+                mk_fun a e1)), e2) 
+        }
+;
 let_argument:    
-    | S_PAR id=IDENT t=type_forcing E_PAR   { (id, Some t) }
-    | id=IDENT                              { (id, None) }
+    | S_PAR id=IDENT t=type_forcing E_PAR   { ($sloc, id, Some t) }
+    | id=IDENT                              { ($sloc, id, None) }
 ;
 type_forcing:
-  COLON t=types {t}
+    COLON t=types {t}
 ;
+%inline fun_argument:
+  a=let_argument  { a }
 
 (* Structure *)
 %inline struct_def:

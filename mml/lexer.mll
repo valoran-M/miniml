@@ -3,8 +3,6 @@
     open Lexing
     open Parser
 
-    exception Lexing_error of string
-
     (* hashtable avec tous les mots clefs *)
     let keyword_table = Hashtbl.create 16
     let () =
@@ -34,6 +32,17 @@
             ]
 
     let is_keyword name = Hashtbl.mem keyword_table name
+
+    let l = ref []
+
+    let begin_comment lexbuf =
+      let start = lexbuf.lex_start_p.pos_cnum - lexbuf.lex_start_p.pos_bol + 1 in
+      l := (lexbuf.lex_start_p.pos_lnum, start, start + 2) :: !l
+
+    let end_comment () =
+      match !l with 
+      | [] -> assert false
+      | _::ls -> l := ls 
 }
 
 let digit = [ '0'-'9' ]
@@ -49,7 +58,8 @@ let false = "false"
 rule pattern = parse
     | ['\n']            { new_line lexbuf; pattern lexbuf }
     | [' ' '\t' '\r']+  { pattern lexbuf }
-    | "(*"              {comment lexbuf; pattern lexbuf}
+    | "(*"              
+      { begin_comment lexbuf; comment lexbuf; pattern lexbuf}
     | number as _number {
             CST(int_of_string _number)
         }
@@ -68,7 +78,6 @@ rule pattern = parse
     | "->"      { R_ARROW }
     | "<-"      { L_ARROW }
     | ":"       { COLON }
-    | "()"      { UNIT_P }
     | ";"       { SEMI }
     | ","       { COMMA }
     | "."       { DOT }
@@ -94,7 +103,7 @@ rule pattern = parse
     | eof       { EOF }
 
 and comment = parse
-    | "*)"  { () }
+    | "*)"  { end_comment () }
     | "(*"  { comment lexbuf; comment lexbuf }
     | _     { comment lexbuf }
-    | eof   { raise (Lexing_error "unterminated comment") }
+    | eof   { Error.raise_unclosed (!l) "unterminated comment" }
