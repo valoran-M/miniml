@@ -1,5 +1,6 @@
 (* prélude *)
 {
+    open Lexing
     open Parser
 
     exception Lexing_error of string
@@ -46,7 +47,7 @@ let false = "false"
 
 (* fonction d'analyse *)
 rule pattern = parse
-    | ['\n']            { pattern lexbuf }
+    | ['\n']            { new_line lexbuf; pattern lexbuf }
     | [' ' '\t' '\r']+  { pattern lexbuf }
     | "(*"              {comment lexbuf; pattern lexbuf}
     | number as _number {

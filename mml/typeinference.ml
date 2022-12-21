@@ -34,7 +34,7 @@ let type_inference prog =
 
   let get_struct_args x =
     let rec aux = function
-      | [] -> Mmlerror.struct_no_field x
+      | [] -> Error.struct_no_field x
       | (s, StrctDef arg) :: l -> (
           try
             let _, t, _ = (List.find (fun (id, _, _) -> id = x)) arg in
@@ -80,24 +80,19 @@ let type_inference prog =
     | TVar a, TVar b when a = b -> ()
     | TVar a, t | t, TVar a ->
         if occur a t then
-          Mmlerror.error
-            (Printf.sprintf
-               "unification error %s %s"
-               (Mmlpp.typ_to_string t1)
-               (Mmlpp.typ_to_string t2))
+          Error.type_error t1 t2
         else
           Hashtbl.add subst a t
     | t1, t2 ->
-        Mmlerror.error
-          (Printf.sprintf
-             "OK unification error %s %s"
-             (Mmlpp.typ_to_string t1)
-             (Mmlpp.typ_to_string t2))
+        Error.type_error t1 t2
   in
 
   let instantiate s =
     let renaming =
-      VSet.fold (fun v r -> SMap.add v (TVar (new_var ())) r) s.vars SMap.empty
+      VSet.fold 
+        (fun v r -> 
+          SMap.add v (TVar (new_var ())) r) 
+        s.vars SMap.empty
     in
 
     let rec rename t =
@@ -208,11 +203,11 @@ let type_inference prog =
             try
               let _, t, _ = (List.find (fun (id, _, _) -> id = x)) st in
               t
-            with Not_found -> Mmlerror.struct_no_field x)
+            with Not_found -> Error.struct_no_field x)
         | TVar _ ->
             let _, t = get_struct_args x in
             t
-        | t -> Mmlerror.not_a_struct t)
+        | t -> Error.not_a_struct t)
     | SetF (e1, x, e2) -> (
         match w e1 env with
         | TDef s -> (
@@ -223,13 +218,13 @@ let type_inference prog =
               if m then
                 TUnit
               else
-                Mmlerror.is_not_mutable s x
-            with Not_found -> Mmlerror.struct_no_field x)
+                Error.is_not_mutable s x
+            with Not_found -> Error.struct_no_field x)
         | TVar _ -> assert false
-        | t -> Mmlerror.not_a_struct t)
+        | t -> Error.not_a_struct t)
   and struct_infer l env = function
     | [] ->
-        Mmlerror.struct_construct_error
+        Error.struct_construct_error
           (List.map (fun (n, e) -> (n, w e env)) l)
     | (_, ConstrDef _) :: ld -> struct_infer l env ld
     | (name, StrctDef s) :: ld -> (
@@ -250,28 +245,28 @@ let type_inference prog =
         | None -> struct_infer l env ld)
   and construct_infer name l env =
     let lt2 = List.map (fun e -> w e env) l in
+    let rec iter_args cname = function
+      | [] -> None
+      | (id, lt1) :: l ->
+          if name = id then
+            try
+              List.iter2 (fun t1 t2 -> unify t1 t2) lt1 lt2;
+              Some cname
+            with Invalid_argument _ ->
+              Error.nb_arg_construct
+                id
+                (List.length lt1)
+                (List.length lt2)
+          else
+            iter_args cname l
+    in
     let rec aux = function
-      | [] -> Mmlerror.unbound_construct name lt2
+      | [] -> Error.unbound_construct name lt2
       | (_, StrctDef _) :: ld -> aux ld
       | (cname, ConstrDef a) :: ld -> (
-          let rec iter_args = function
-            | [] -> None
-            | (id, lt1) :: l ->
-                if name = id then
-                  try
-                    List.iter2 (fun t1 t2 -> unify t1 t2) lt1 lt2;
-                    Some cname
-                  with Invalid_argument _ ->
-                    Mmlerror.nb_arg_construct
-                      id
-                      (List.length lt1)
-                      (List.length lt2)
-                else
-                  iter_args l
-          in
-          match iter_args a with
-          | Some name -> TDef name
-          | None -> aux ld)
+        match iter_args cname a with
+        | Some name -> TDef name
+        | None -> aux ld)
     in
     aux types
   in

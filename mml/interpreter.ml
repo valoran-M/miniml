@@ -144,7 +144,7 @@ let eval_prog (prog : prog) : value * (int, heap_value) Hashtbl.t =
     | VBool b1  , VBool b2  -> b1 = b2
     | VPtr  pt1 , VPtr  pt2 -> (
         match (Hashtbl.find mem pt1, Hashtbl.find mem pt2) with 
-        | VClos _, _ | _, VClos _ -> Mmlerror.compare_fun ();
+        | VClos _, _ | _, VClos _ -> Error.compare_fun ();
         | VStrct s1, VStrct s2 -> 
             Hashtbl.fold 
               (fun id v acc -> acc && struc_equal v (Hashtbl.find s2 id)) 

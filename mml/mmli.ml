@@ -1,4 +1,3 @@
-open Lexing
 open Format
 
 let usage = "usage: ./mmli file.mml"
@@ -19,12 +18,6 @@ let file =
       Arg.usage spec usage;
       exit 1
 
-let report (b, e) =
-  let l = b.pos_lnum in
-  let fc = b.pos_cnum - b.pos_bol + 1 in
-  let lc = e.pos_cnum - b.pos_bol + 1 in
-  eprintf "File \"%s\", line %d, characters %d-%d:\n" file l fc lc
-
 let () =
   let c = open_in file in
   let lb = Lexing.from_channel c in
@@ -38,14 +31,12 @@ let () =
     print_newline ()
   with
   | Lexer.Lexing_error s ->
-      report (lexeme_start_p lb, lexeme_end_p lb);
-      eprintf "lexical error: %s@." s;
+      Errorcat.print_lexing_error file lb s;
       exit 1
   | Parser.Error ->
-      report (lexeme_start_p lb, lexeme_end_p lb);
-      eprintf "syntax error@.";
+      Errorcat.print_syntax_err file lb;
       exit 1
-  | Mmlerror.Type_error s ->
+  | Error.Error (Type_error s) ->
       eprintf "type error: %s@." s;
       exit 1
   | e ->
