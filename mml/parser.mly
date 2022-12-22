@@ -166,17 +166,21 @@ typdes_def:
 (* Déclaration *)
 %inline let_expr:
     | LET id=IDENT 
-        a=list(let_argument) S_EQ 
+        a=list(let_argument) 
+        t=option(type_forcing) S_EQ 
         e1=expression IN 
-        e2=expression                       { Let(id, mk_fun a e1, e2) }
+        e2=expression                       
+        { 
+          Let(id, mk_fun a e1, mk_fun_type a t, e2) 
+        }
     | LET REC id=IDENT a=list(let_argument) 
         t=option(type_forcing) S_EQ 
         e1=expression IN 
         e2=expression                       
         { 
+          let t = mk_fun_type a t in
           Let(id, mk_expr $sloc (Fix(id, 
-                mk_fun_type a t,
-                mk_fun a e1)), e2) 
+                t, mk_fun a e1)), t, e2) 
         }
 ;
 let_argument:    

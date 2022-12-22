@@ -18,10 +18,6 @@ let new_type_var =
     Hashtbl.add  mem_var s !var; 
     !var
 
-(* let rec print_list_char = function  *)
-(*   | [] -> "" *)
-(*   | c :: l -> Printf.sprintf "%c%s" c (print_list_char l) *)
-
 let rec typ_to_string = function
   | TInt -> "int"
   | TBool -> "bool"
@@ -88,7 +84,7 @@ let rec print_expr ppf = function
   | Fun (x, Some t, e) ->
       fprintf ppf "fun (%s: %s) -> %a" x (typ_to_string t) print_expr e.expr
   | Fun (x, None, e) -> fprintf ppf "fun (%s) -> %a" x print_expr e.expr
-  | Let (x, e1, e2) ->
+  | Let (x, e1, _, e2) ->
       fprintf ppf "@[<hv 10>(let %s =@ %a in@.%a)@]"
         x print_expr e1.expr
         print_expr e2.expr

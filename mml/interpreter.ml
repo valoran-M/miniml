@@ -91,7 +91,7 @@ let eval_prog (prog : prog) : value * (int, heap_value) Hashtbl.t =
           | Mul | Div), _, _))      -> VInt (evali e env)
     (* Fonction *)
     | Fun (id, _, e)      -> eval_fun id e env
-    | Let (id, e1, e2)    -> eval e2 (Env.add id (eval e1 env) env)
+    | Let (id, e1, _, e2) -> eval e2 (Env.add id (eval e1 env) env)
     | App (e1, e2)        -> eval_app e1 e2 env
     | Fix (id, _, e)      -> eval_fix id e env
     (* struct *)

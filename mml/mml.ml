@@ -38,7 +38,7 @@ type expr =
     | Bop     of bop * expr_loc * expr_loc
     | Var     of string
     | If      of expr_loc * expr_loc * expr_loc option
-    | Let     of string * expr_loc * expr_loc
+    | Let     of string * expr_loc * typ option * expr_loc
     | Fun     of string * typ option * expr_loc
     | App     of expr_loc * expr_loc
     | Fix     of string * typ option * expr_loc

@@ -168,8 +168,14 @@ let type_inference prog =
         unify e2 t2 TInt;
         TInt
     | Var s -> instantiate (SMap.find s env)
-    | Let (s, e1, e2) ->
+    | Let (s, e1, None, e2) ->
         let t1 = w e1 env in
+        let st1 = generalize t1 env in
+        let env' = SMap.add s st1 env in
+        w e2 env'
+    | Let (s, e1, Some t, e2) ->
+        let t1 = w e1 env in
+        unify e1 t1 t;
         let st1 = generalize t1 env in
         let env' = SMap.add s st1 env in
         w e2 env'
