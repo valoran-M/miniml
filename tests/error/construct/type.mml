@@ -1,0 +1,4 @@
+type s = 
+  | Some of int
+
+Some(true)

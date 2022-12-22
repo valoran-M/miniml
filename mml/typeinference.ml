@@ -146,7 +146,7 @@ let type_inference prog =
     | Bop ((Equ   | Nequ 
           | Sequ  | Snequ), e1, e2) ->
         let t = w e1 env in
-        unify e1 t (w e2 env);
+        unify e2 (w e2 env) t;
         TBool
     | Bop ((Or | And), e1, e2) ->
         let t1 = w e1 env in
@@ -228,7 +228,7 @@ let type_inference prog =
             try
               let _, t, _ = (List.find (fun (id, _, _) -> id = x)) st in
               t
-            with Not_found -> Error.struct_no_field se s x)
+            with Not_found -> Error.struct_no_field e s x)
         | TVar _ -> 
             snd (get_struct_args e x)
         | t -> Error.not_a_struct e t)
@@ -248,7 +248,7 @@ let type_inference prog =
             snd (get_struct_args_mut e x)
         | t -> Error.not_a_struct e1 t)
   and struct_infer e l env = function
-    | [] ->
+    | [] -> 
         Error.struct_construct_error e
           (List.map (fun (n, e) -> (n, w e env)) l)
     | (_, ConstrDef _) :: ld -> struct_infer e l env ld
@@ -259,7 +259,9 @@ let type_inference prog =
                 try
                   unify e t (w e env);
                   iter_args (l1, l2)
-                with Failure _ -> None
+                with 
+                | Failure _ -> None
+                | _ -> None
               else
                 None
           | [], [] -> Some name

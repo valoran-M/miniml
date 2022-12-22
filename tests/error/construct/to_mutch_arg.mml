@@ -1,0 +1,4 @@
+type s = 
+  | Some of int * int
+
+Some (2, 2, 2)

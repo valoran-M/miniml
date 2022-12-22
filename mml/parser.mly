@@ -88,7 +88,8 @@
 
 (* Prioritées *)
 %nonassoc IN                    (* let ... in ... *)
-%left     SEMI                  (* { id1 = e1; ... idn = en } *)
+%nonassoc IDENT
+%nonassoc SEMI                  (* { id1 = e1; ... idn = en } *)
 %nonassoc L_ARROW
 %nonassoc R_ARROW               (* type(t -> t -> t) *)
 %nonassoc THEN                  (* BELLOW else if ... then ... *)
@@ -108,7 +109,7 @@
 %nonassoc prec_constr_empty     (* C vs C (x) *)
 (* Autres *)
 %nonassoc S_PAR S_BRACE CONSTR 
-          IDENT CST BOOL
+          CST BOOL
 
 %%
 
@@ -118,14 +119,14 @@ program:
 ;
 
 simple_expression:
-    | n=CST                                                 { mk_expr $sloc (Int n) }
-    | b=BOOL                                                { mk_expr $sloc (Bool b) }
-    | S_PAR E_PAR                                           { mk_expr $sloc Unit }
-    | id=IDENT                                              { mk_expr $sloc (Var (id)) }
-    | S_PAR e=expression E_PAR                              { e }
-    | e=simple_expression DOT id=IDENT                      { mk_expr $sloc (GetF (e, id)) }
-    | S_BRACE a=nonempty_list(body_struct) E_BRACE          { mk_expr $sloc (Strct a) }
-    | id=CONSTR l=constr_param                              { mk_expr $sloc (Constr (id, l)) }
+    | n=CST                                         { mk_expr $sloc (Int n) }
+    | b=BOOL                                        { mk_expr $sloc (Bool b) }
+    | S_PAR E_PAR                                   { mk_expr $sloc Unit }
+    | id=IDENT                                      { mk_expr $sloc (Var (id)) }
+    | S_PAR e=expression E_PAR                      { e }
+    | e=simple_expression DOT id=IDENT              { mk_expr $sloc (GetF (e, id)) }
+    | S_BRACE a=nonempty_list(body_struct) E_BRACE  { mk_expr $sloc (Strct a) }
+    | id=CONSTR l=constr_param                      { mk_expr $sloc (Constr (id, l)) }
 ;
 
 expression:
@@ -191,16 +192,17 @@ type_forcing:
 (* Structure *)
 %inline struct_def:
     | TYPE id=IDENT S_EQ 
-        S_BRACE 
-          a=nonempty_list(body_struct_def) 
-        E_BRACE                         { (id, StrctDef a) }
+      S_BRACE a=nonempty_list(body_struct_def) E_BRACE                         
+        { (id, StrctDef a) }
 
 body_struct_def:
-    | m=boption(MUTABLE) id=IDENT COLON t=types SEMI    { (id, t, m) }
+    | m=boption(MUTABLE) id=IDENT COLON t=types SEMI    
+      { (id, t, m) }
 ;
 
 body_struct:    
-    | id=IDENT S_EQ e=expression SEMI   { (id, e) }
+    | id=IDENT S_EQ e=expression SEMI %prec S_EQ
+      { (id, e) }
 ;
 
 (* Constructeur *)

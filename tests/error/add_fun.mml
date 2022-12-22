@@ -1,1 +1,1 @@
-let f x = x 2 in f + f
+let f x = x 2 in f 2 + f 3
