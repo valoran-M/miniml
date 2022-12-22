@@ -176,7 +176,7 @@ let type_inference prog =
     | If (c, e1, Some e2) ->
         unify e1 (w c env) TBool;
         let t = w e1 env in
-        unify e2 t (w e2 env);
+        unify e2 (w e2 env) t;
         t
     | If (c, e, None) ->
         unify c (w c env) TBool;
