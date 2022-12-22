@@ -26,23 +26,31 @@ let type_inference prog =
     snd (List.find (fun (id, _) -> name = id) prog.types)
   in
 
-  let get_struct_with_name name =
+  let get_struct_with_name e name =
     match get_type_def name with
     | StrctDef s -> s
-    | _ -> assert false
+    | _ -> Error.unbound_record_field e name
   in
 
-  let get_struct_args e x =
+  let get_struct_args_fun f e x =
     let rec aux = function
-      | [] -> Error.struct_no_field e x
+      | [] -> Error.unbound_record_field e x
       | (s, StrctDef arg) :: l -> (
           try
-            let _, t, _ = (List.find (fun (id, _, _) -> id = x)) arg in
+            let _, t, _ = List.find f arg in
             (s, t)
           with Not_found -> aux l)
       | _ :: l -> aux l
     in
     aux (List.rev prog.types)
+  in
+
+  let get_struct_args e x = 
+    get_struct_args_fun (fun (id, _, _) -> id = x) e x
+  in
+
+  let get_struct_args_mut e x = 
+    get_struct_args_fun (fun (id, _, b) -> b && id = x) e x
   in
 
   let rec unfold t =
@@ -194,9 +202,9 @@ let type_inference prog =
             unify e2 t2 t1;
             t1'
         | TVar _ -> 
-            let t1 = new_var () in 
+            let t1 = w e2 env in
             let t2 = new_var () in
-            unify e t (TFun(TVar t1, TVar t2));
+            unify e t (TFun(t1 , TVar t2));
             TVar t2
         | t -> Error.not_a_function e1 t)
     | Fix (s, t, e) -> (
@@ -213,22 +221,21 @@ let type_inference prog =
         w e2 env
     | Constr (name, ex) -> construct_infer e name ex env
     | Strct l -> struct_infer e l env types
-    | GetF (e, x) -> (
-        match w e env with
+    | GetF (se, x) -> (
+        match w se env with
         | TDef s -> (
-            let st = get_struct_with_name s in
+            let st = get_struct_with_name se s in
             try
               let _, t, _ = (List.find (fun (id, _, _) -> id = x)) st in
               t
-            with Not_found -> Error.struct_no_field e x)
-        | TVar _ ->
-            let _, t = get_struct_args e x in
-            t
+            with Not_found -> Error.struct_no_field se s x)
+        | TVar _ -> 
+            snd (get_struct_args e x)
         | t -> Error.not_a_struct e t)
     | SetF (e1, x, e2) -> (
         match w e1 env with
         | TDef s -> (
-            let st = get_struct_with_name s in
+            let st = get_struct_with_name e s in
             try
               let _, t, m = (List.find (fun (id, _, _) -> id = x)) st in
               unify e2 (w e2 env) t;
@@ -236,8 +243,9 @@ let type_inference prog =
                 TUnit
               else
                 Error.is_not_mutable e s x
-            with Not_found -> Error.struct_no_field e x)
-        | TVar _ -> assert false
+            with Not_found -> Error.struct_no_field e s x)
+        | TVar _ -> 
+            snd (get_struct_args_mut e x)
         | t -> Error.not_a_struct e1 t)
   and struct_infer e l env = function
     | [] ->

@@ -1,14 +1,43 @@
 open Format
 open Mml
 
+let (mem_var: (string, char list) Hashtbl.t) = Hashtbl.create 16
+let rec print_list_char = function 
+  | [] -> ""
+  | c :: l -> Printf.sprintf "%c%s" c (print_list_char l)
+
+let new_type_var =
+  let var = ref [char_of_int 96] in
+  let rec incr = function
+    | [] -> ['a']
+    | c::l when c < 'y' -> (char_of_int (int_of_char c + 1)) :: l
+    | _::l -> 'a' :: (incr l)
+  in
+  fun s -> 
+    var := incr !var;
+    Hashtbl.add  mem_var s !var; 
+    !var
+
+(* let rec print_list_char = function  *)
+(*   | [] -> "" *)
+(*   | c :: l -> Printf.sprintf "%c%s" c (print_list_char l) *)
+
 let rec typ_to_string = function
   | TInt -> "int"
   | TBool -> "bool"
   | TUnit -> "unit"
-  | TVar s -> Printf.sprintf "TVar(%s)" s
-  | TFun (typ1, typ2) ->
-      Printf.sprintf "(%s) -> %s" (typ_to_string typ1) (typ_to_string typ2)
-  | TDef s -> Printf.sprintf "TDef(%s)" s
+  | TVar s -> 
+    if Hashtbl.mem mem_var s then
+      Printf.sprintf "'%s" (print_list_char (Hashtbl.find mem_var s))
+    else 
+      Printf.sprintf "'%s" (print_list_char (new_type_var s))
+  | TFun (typ1, typ2) ->(
+      match typ1 with 
+      | TFun _ -> 
+        Printf.sprintf "(%s) -> %s" (typ_to_string typ1) (typ_to_string typ2)
+      | _ -> 
+        Printf.sprintf "%s -> %s" (typ_to_string typ1) (typ_to_string typ2))
+  | TDef s -> Printf.sprintf "%s" s
 
 let rec print_fields ppf = function
   | [] -> fprintf ppf ""

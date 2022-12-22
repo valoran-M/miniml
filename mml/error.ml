@@ -15,6 +15,10 @@ let type_error e ty_actual ty_expected =
        (Mmlpp.typ_to_string ty_actual)
        (Mmlpp.typ_to_string ty_expected))
 
+let unbound_record_field e s = 
+    raise_type_error e 
+      (Printf.sprintf "Unbound record field %s" s)
+
 (* unclosed *)
 let raise_unclosed l s = 
   match l with 
