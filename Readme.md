@@ -11,28 +11,28 @@ Le Mini-Ml est un sous ensemble de ML, il est composé de 2 parties :
 
 ### Lexer:
   
-  Utilise Ocamllex et génère des Token définis dans le parser
+  Utilise Ocamllex et génère des Token définis dans le parser.
 
 ### Parser:
   
-  Utilise Menhir prend les token générer pas le lexer 
-  et créer des expressions qui respectent la grammaire
+  Utilise Menhir, prend les token générés par le lexer
+  et crée des expressions qui respectent la grammaire.
 
 ### Typdef Verif:
 
-  Parcours les définitions de types pour voir s'il 
-  n'y a pas de type inconnue dans les définitions
+  Parcourt les définitions de types pour voir si les
+  types sont connus.
 
 ### Type Checker:
 
   Vérifie le bon typage du programme sans polymorphisme et sans contrainte.
 
-  Ne fonctionne plus
+  /!\ Ne fonctionne plus
 
 ### Type Infer:
   
-  Donne les types aux expressions et vérifie les contraintes 
-  si jamais elles ne sont pas respectées il produit une erreur. 
+  Détermine les types des expressions et vérifie les contraintes,
+  si elles ne sont pas respectées il produit une erreur. 
   (Utilisation de l'algo W [^1])
 
 ## Les types
@@ -71,8 +71,8 @@ Les expressions sont les suivantes :
 - `{a1 = e1; ...; an = en;}` : l'expression de création de structure
 - `e.a` : l'expression d'accès à un champ de structure
 - `e1.a <- e2` : l'expression d'écriture à un champ de structure
-- `Enum` : Construction d'une varaible enum
-- `Constr(e1, ...)`: Construction d'une varaible algébriques
+- `Enum` : Construction d'une variable enum
+- `Constr(e1, ...)`: Construction d'une variable algébrique
 
 
 
@@ -86,6 +86,6 @@ Les expressions sont les suivantes :
 |  Structures  |     X    |     X     |      X      |      X      |
 |   Récursion  |     X    |     X     |      X      |      X      |
 
-# References
+# Références
 
 [^1]: B. Heeren, J. Hage, and S. D. Swierstra. Generalizing Hindley-Milner type inference algorithms. Technical Report UU-CS-2002-031, Institute of Information and Computing Science, University Utrecht, Netherlands, July 2002.
