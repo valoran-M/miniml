@@ -36,10 +36,11 @@ let rec typ_to_string = function
         Printf.sprintf "%s -> %s" 
           (typ_to_string typ1) (typ_to_string typ2))
   | TDef s -> Printf.sprintf "%s" s
+  | TParam (t, s) -> Printf.sprintf "(%s %s)" (typ_to_string t) s
 
 let rec print_fields ppf = function
   | [] -> fprintf ppf ""
-  | (x, t, m) :: l ->
+  | (x, t, m, _) :: l ->
       let mut =
         if m then
           "mutable "
@@ -51,19 +52,25 @@ let rec print_fields ppf = function
 let rec types_list_to_string = function
   | [] -> ""
   | [ t ] -> Printf.sprintf "%s" (typ_to_string t)
-  | t :: l -> Printf.sprintf "%s, %s" (typ_to_string t) (types_list_to_string l)
+  | t :: l -> Printf.sprintf "%s * %s" (typ_to_string t) (types_list_to_string l)
 
 let rec print_constr ppf = function
   | [] -> fprintf ppf ""
+  | (s, []) :: l -> 
+      fprintf ppf "| %s @. %a" s print_constr l
   | (s, tl) :: l -> 
-      fprintf ppf "| %s of %s @. %a" s (types_list_to_string tl) print_constr l
+      fprintf ppf "| %s of (%s) @. %a" s 
+        (types_list_to_string (List.map fst tl)) print_constr l
 
 let rec print_types ppf = function
   | [] -> fprintf ppf "@."
   | (t, StrctDef s) :: l ->
       fprintf ppf "type %s = { @[%a}@]@.%a" t print_fields s print_types l
-  | (t, ConstrDef e) :: l ->
+  | (t, ConstrDef (e, None)) :: l ->
       fprintf ppf "type %s = @[%a@]@.%a" t print_constr e print_types l
+  | (t, ConstrDef (e, Some tvar)) :: l ->
+      fprintf ppf "type %s %s = @[%a@]@.%a" 
+        tvar t print_constr e print_types l
 
 let uop_to_string = function
   | Neg -> "-"

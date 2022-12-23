@@ -1,7 +1,8 @@
 (* Pour remonter des erreurs circonstanciées *)
 type error =
-    | Unclosed    of int * int * int * string
-    | Type_error  of Mml.expr_loc * string
+    | Unclosed      of int * int * int * string
+    | Type_error    of Mml.expr_loc * string
+    | Type_def      of Mml.location * string
 
 exception Error of error
 
@@ -18,6 +19,10 @@ let type_error e ty_actual ty_expected =
 let unbound_record_field e s = 
     raise_type_error e 
       (Printf.sprintf "Unbound record field %s" s)
+
+let unbound_value e s =
+  raise_type_error e 
+    (Printf.sprintf "Unbound value %s" s)
 
 (* unclosed *)
 let raise_unclosed l s = 
@@ -79,3 +84,17 @@ let nb_arg_construct e name n1 n2 =
 
 let compare_fun e  = 
   raise_type_error e "compare functional value"
+
+(* types def *)
+
+let struct_def_error name loc t = 
+  raise (Error (Type_def (loc,
+    (Printf.sprintf 
+      "The definition of struct %s contains this undefined %s type" 
+      name t))))
+
+let constr_def_error name loc t = 
+  raise (Error (Type_def (loc,
+    (Printf.sprintf 
+      "The definition of %s contains this undefined %s type" 
+      name t))))

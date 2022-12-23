@@ -51,6 +51,7 @@ let alpha = ['a'-'z' 'A'-'Z']
 let ident = ['a'-'z' '_'] (alpha | '_' | digit)*
 let construct = ['A'-'Z'] (alpha | '_' | digit)*
 let keyword = ['a'-'z']+
+let tvar = '\''['a'-'z']+
 let true = "true"
 let false = "false"
 
@@ -73,6 +74,7 @@ rule pattern = parse
                 IDENT(name)
         }
     | ident as name     { IDENT(name) }
+    | tvar  as var      { T_VAR(var) } 
     (* symboles *)
     | "="       { S_EQ }
     | "->"      { R_ARROW }

@@ -1,0 +1,6 @@
+type 'a s1 = 
+  | Node of 'a s1 * 'b * 'a s1 
+  | Leaf
+
+let x2 = Node(Leaf, true, Leaf) in
+let x = Node(Leaf, 3, Leaf) in x

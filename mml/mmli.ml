@@ -39,6 +39,9 @@ let () =
   | Error.Error (Type_error (e, s)) ->
       Errorcat.print_type_error file e s;
       exit 1
+  | Error.Error (Type_def (loc, s)) ->
+      Errorcat.print_type_constr_error file loc s;
+      exit 1
   | e ->
       eprintf "Anomaly: %s\n@." (Printexc.to_string e);
       exit 2

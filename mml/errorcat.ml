@@ -143,3 +143,12 @@ let print_type_error file e s =
   print_prog file (ls, ll, fc, lc);
   eprintf "@{<bold>@{<fg_red>Error@}@}: @[%s@]@." s
 
+(* types def *)
+
+let print_type_constr_error file loc s = 
+  add_ansi_marking err_formatter;
+  let ls, ll, fc, lc = pose_lex loc.fc loc.lc in
+  report file (ls, ll, fc, lc);
+  print_prog file (ls, ll, fc, lc);
+  eprintf "@{<bold>@{<fg_red>Error@}@}: @[%s@]@." s
+

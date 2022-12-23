@@ -36,6 +36,7 @@
 %token <bool> BOOL          "b"
 %token <int> CST            "n"
 (* Types *)
+%token <string>T_VAR        "'a"
 %token T_INT    "int"
 %token T_BOOL   "bool"
 %token T_UNIT   "unit"
@@ -88,6 +89,7 @@
 
 (* Prioritées *)
 %nonassoc IN                    (* let ... in ... *)
+%nonassoc T_VAR
 %nonassoc IDENT
 %nonassoc SEMI                  (* { id1 = e1; ... idn = en } *)
 %nonassoc L_ARROW
@@ -115,7 +117,8 @@
 
 program:
     | l=list(typdes_def) 
-        c=expression EOF        { {types = l; code = c} }
+        c=expression EOF        
+      { {types = l; code = c} }
 ;
 
 simple_expression:
@@ -138,15 +141,14 @@ expression:
     | IF c=expression THEN e1=expression 
                       ELSE e2=expression    { mk_expr $sloc (If(c, e1, Some e2)) }
     | FUN a=fun_argument 
-        R_ARROW e=expression                
-          { let _, id, t = a in 
-            mk_expr $sloc (Fun(id, t, e)) 
-          }
+          R_ARROW e=expression                
+        { let _, id, t = a in 
+          mk_expr $sloc (Fun(id, t, e)) 
+        }
     | e1=simple_expression DOT id=IDENT 
         L_ARROW e2=expression               { mk_expr $sloc (SetF(e1, id, e2)) }
     | e1=expression SEMI e2=expression      { mk_expr $sloc (Seq(e1, e2)) }
     | e=let_expr                            { mk_expr $sloc e }
-    
 ;
 
 (* types *)
@@ -154,6 +156,8 @@ types:
     | T_INT                     { TInt }
     | T_BOOL                    { TBool }
     | T_UNIT                    { TUnit }
+    | t=T_VAR                   { TVar(t) }
+    | t=T_VAR id=IDENT          { TParam(TVar(t), id) }
     | id=IDENT                  { TDef(id) }
     | t1=types R_ARROW t2=types { TFun(t1, t2) }
     | S_PAR t=types E_PAR       { t }
@@ -166,17 +170,17 @@ typdes_def:
 (* Déclaration/fonction *)
 %inline let_expr:
     | LET id=IDENT 
-        a=list(let_argument) 
-        t=option(type_forcing) S_EQ 
-        e1=expression IN 
-        e2=expression                       
+          a=list(let_argument) 
+          t=option(type_forcing) S_EQ 
+          e1=expression IN 
+          e2=expression                       
         { 
           Let(id, mk_fun a e1, mk_fun_type a t, e2) 
         }
     | LET REC id=IDENT a=list(let_argument) 
-        t=option(type_forcing) S_EQ 
-        e1=expression IN 
-        e2=expression                       
+          t=option(type_forcing) S_EQ 
+          e1=expression IN 
+          e2=expression                       
         { 
           let t = mk_fun_type a t in
           Let(id, mk_expr $sloc (Fix(id, 
@@ -197,12 +201,12 @@ type_forcing:
 (* Structure *)
 %inline struct_def:
     | TYPE id=IDENT S_EQ 
-      S_BRACE a=nonempty_list(body_struct_def) E_BRACE                         
-        { (id, StrctDef a) }
+        S_BRACE a=nonempty_list(body_struct_def) E_BRACE                         
+      { (id, StrctDef a) }
 
 body_struct_def:
     | m=boption(MUTABLE) id=IDENT COLON t=types SEMI    
-      { (id, t, m) }
+      { (id, t, m, mk_loc $sloc) }
 ;
 
 body_struct:    
@@ -211,22 +215,32 @@ body_struct:
 ;
 
 (* Constructeur *)
+%inline constr_types_def:
+    | t=types           
+        {t, mk_loc $sloc}
+;
 constr_types: 
-    | BAR c=CONSTR                                { (c, []) }
+    | BAR c=CONSTR                                
+      { (c, []) }
     | BAR c=CONSTR OF 
-        l=separated_nonempty_list(STAR, types)    { (c, l) }
+        l=separated_nonempty_list(STAR, constr_types_def)    
+      { (c, l) }
 ;
 
 %inline constr_def:
     | TYPE id=IDENT S_EQ 
-        a=nonempty_list(constr_types)             { (id, ConstrDef a) }
+        a=nonempty_list(constr_types)             
+      { (id, ConstrDef (a, None)) }
+    | TYPE t=T_VAR id=IDENT S_EQ 
+        a=nonempty_list(constr_types)             
+      { (id, ConstrDef (a, Some t)) }
 ;
 
 constr_param:
     | (* empty *)   %prec prec_constr_empty
-        { [] }
+      { [] }
     | S_PAR l=separated_nonempty_list(COMMA, expression) E_PAR
-        { l }
+      { l }
 
 (* Opération *)
 %inline uop:

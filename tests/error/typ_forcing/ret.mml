@@ -1,1 +1,1 @@
-let f x : bool = x in - (f true)
+let f (x: bool) : bool = x in - (f true)

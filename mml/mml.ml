@@ -1,3 +1,7 @@
+type location = 
+  { fc  : Lexing.position
+  ; lc  : Lexing.position}
+
 type typ =
     | TInt
     | TBool
@@ -5,13 +9,15 @@ type typ =
     | TVar    of string
     | TFun    of typ * typ
     | TDef    of string
-
+    | TParam  of typ * string
 
 type enum = string list
 
 type tDef = 
-    | StrctDef      of (string * typ * bool)  list
-    | ConstrDef     of (string * typ list)    list
+    | StrctDef      of (string * typ * bool 
+                                  * location) list
+    | ConstrDef     of (string * (typ * location) list) list 
+                        * string option
 
 type uop = Neg | Not
 
@@ -25,10 +31,6 @@ type bop =
     | Sequ  | Snequ
     | Le    | Lt
     | Or    | And
-
-type location = 
-  { fc  : Lexing.position
-  ; lc  : Lexing.position}
 
 type expr =
     | Int     of int

@@ -54,9 +54,12 @@ let type_prog prog =
         check e2 TInt tenv;
         TBool
     | Var s -> SymTbl.find s tenv
-    | Let (s, e1, e2) ->
+    | Let (s, e1, None, e2) ->
         let t1 = type_expr e1 tenv in
         type_expr e2 (SymTbl.add s t1 tenv)
+    | Let (s, e1, Some t, e2) -> 
+        check e1 t tenv;
+        type_expr e2 (SymTbl.add s t tenv)
     | If (c, e1, Some e2) ->
         check c TBool tenv;
         let t2 = type_expr e2 tenv in

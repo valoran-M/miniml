@@ -37,7 +37,7 @@ let type_inference prog =
       | [] -> Error.unbound_record_field e x
       | (s, StrctDef arg) :: l -> (
           try
-            let _, t, _ = List.find f arg in
+            let _, t, _, _ = List.find f arg in
             (s, t)
           with Not_found -> aux l)
       | _ :: l -> aux l
@@ -46,11 +46,11 @@ let type_inference prog =
   in
 
   let get_struct_args e x = 
-    get_struct_args_fun (fun (id, _, _) -> id = x) e x
+    get_struct_args_fun (fun (id, _, _, _) -> id = x) e x
   in
 
   let get_struct_args_mut e x = 
-    get_struct_args_fun (fun (id, _, b) -> b && id = x) e x
+    get_struct_args_fun (fun (id, _, b, _) -> b && id = x) e x
   in
 
   let rec unfold t =
@@ -60,6 +60,7 @@ let type_inference prog =
           unfold (Hashtbl.find subst s)
         else
           t
+    | TParam (t, s) -> TParam (unfold t, s)
     | _ -> t
   in
 
@@ -82,6 +83,10 @@ let type_inference prog =
     | TBool, TBool -> ()
     | TUnit, TUnit -> ()
     | TDef s1, TDef s2 when s1 = s2 -> ()
+    | TParam (t1', s1) as t1, (TParam (t2', s2) as t2) when s1 = s2 ->(
+        try 
+          unify e t1' t2'
+        with _ -> Error.type_error e t1 t2)
     | TFun (t1, t1'), TFun (t2, t2') ->
         unify e t1 t2;
         unify e t1' t2'
@@ -89,7 +94,7 @@ let type_inference prog =
     | TVar a, t | t, TVar a ->
         if occur a t then
           Error.type_error e (unfold_full t1) (unfold_full t2)
-        else
+        else 
           Hashtbl.add subst a t
     | t1, t2 ->
         Error.type_error e (unfold_full t1) (unfold_full t2)
@@ -167,7 +172,10 @@ let type_inference prog =
         unify e1 t1 TInt;
         unify e2 t2 TInt;
         TInt
-    | Var s -> instantiate (SMap.find s env)
+    | Var s -> (
+        try
+          instantiate (SMap.find s env)
+        with Not_found -> Error.unbound_value e s)
     | Let (s, e1, None, e2) ->
         let t1 = w e1 env in
         let st1 = generalize t1 env in
@@ -232,7 +240,7 @@ let type_inference prog =
         | TDef s -> (
             let st = get_struct_with_name se s in
             try
-              let _, t, _ = (List.find (fun (id, _, _) -> id = x)) st in
+              let _, t, _ , _ = (List.find (fun (id, _, _, _) -> id = x)) st in
               t
             with Not_found -> Error.struct_no_field e s x)
         | TVar _ -> 
@@ -243,7 +251,7 @@ let type_inference prog =
         | TDef s -> (
             let st = get_struct_with_name e s in
             try
-              let _, t, m = (List.find (fun (id, _, _) -> id = x)) st in
+              let _, t, m, _ = (List.find (fun (id, _, _, _) -> id = x)) st in
               unify e2 (w e2 env) t;
               if m then
                 TUnit
@@ -260,7 +268,7 @@ let type_inference prog =
     | (_, ConstrDef _) :: ld -> struct_infer e l env ld
     | (name, StrctDef s) :: ld -> (
         let rec iter_args = function
-          | (id1, e) :: l1, (id2, t, _) :: l2 ->
+          | (id1, e) :: l1, (id2, t, _, _) :: l2 ->
               if id1 = id2 then
                 try
                   unify e t (w e env);
@@ -283,7 +291,7 @@ let type_inference prog =
       | (id, lt1) :: l ->
           if name = id then
             try
-              List.iter2 (fun t1 (t2, loc) -> unify loc t1 t2) lt1 lt2;
+              List.iter2 (fun (t1, _) (t2, loc) -> unify loc t2 t1) lt1 lt2;
               Some cname
             with Invalid_argument _ ->
               Error.nb_arg_construct e
@@ -298,12 +306,19 @@ let type_inference prog =
           let lt2 = List.map fst lt2 in
           Error.unbound_construct e name lt2
       | (_, StrctDef _) :: ld -> aux ld
-      | (cname, ConstrDef a) :: ld -> (
+      | (cname, ConstrDef (a, t)) :: ld -> (
         match iter_args cname a with
-        | Some name -> TDef name
+        | Some name -> constr_match name t
         | None -> aux ld)
-    in
+      and constr_match name = function 
+        | Some t -> 
+            let tparam = unfold (TVar t) in
+            Hashtbl.remove subst t;
+            TParam (tparam, name)
+        | None -> TDef name
+      in
     aux types
   in
-
+  
+  Constructdef.verif_construct prog.types;
   unfold_full (w prog.code SMap.empty)
