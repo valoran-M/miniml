@@ -6,7 +6,7 @@ Le Mini-Ml est un sous ensemble de ML, il est composé de 2 parties :
 
 ## Fonctionnement 
 
-![diag](./doc/diagram.png =x500)
+![diag](https://gitlab.com/valoranM/miniml/-/blob/master/doc/diagram.png =x500)
 
 ### Lexer:
   
