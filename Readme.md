@@ -4,6 +4,36 @@ Le Mini-Ml est un sous ensemble de ML, il est composé de 2 parties :
 1. Les types
 2. Les expressions
 
+## Fonctionnement 
+
+![diag](./doc/diagram.png =x500)
+
+### Lexer:
+  
+  Utilise Ocamllex et génère des Token définis dans le parser
+
+### Parser:
+  
+  Utilise Menhir prend les token générer pas le lexer 
+  et créer des expressions qui respectent la grammaire
+
+### Typdef Verif:
+
+  Parcours les définitions de types pour voir s'il 
+  n'y a pas de type inconnue dans les définitions
+
+### Type Checker:
+
+  Vérifie le bon typage du programme sans polymorphisme et sans contrainte.
+
+  Ne fonctionne plus
+
+### Type Infer:
+  
+  Donne les types aux expressions et vérifie les contraintes 
+  si jamais elles ne sont pas respectées il produit une erreur. 
+  (Utilisation de l'algo W [^1])
+
 ## Les types
 
 Les types sont les suivants :
@@ -43,3 +73,7 @@ Les expressions sont les suivantes :
 |   Fonctions  |     X    |     X     |      X      |      X      |
 |  Structures  |     X    |     X     |      X      |      X      |
 |   Récursion  |     X    |     X     |      X      |      X      |
+
+# References
+
+[^1]: B. Heeren, J. Hage, and S. D. Swierstra. Generalizing Hindley-Milner type inference algorithms. Technical Report UU-CS-2002-031, Institute of Information and Computing Science, University Utrecht, Netherlands, July 2002.

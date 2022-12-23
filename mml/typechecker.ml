@@ -1,3 +1,13 @@
+(* 
+              / \
+             / ! \
+            /_____\
+
+Plus utilisé et plus compilé donc pas mis à jour
+ *)
+
+
+
 open Mml
 
 (* Environnement de typage : associe des types aux noms de variables *)
@@ -91,7 +101,7 @@ let type_prog prog =
           | (_, ConstrDef _) :: ld -> stuct_construct ld
           | (name, StrctDef s) :: ld -> (
               let rec iter_args = function
-                | (id1, e) :: l1, (id2, t, _) :: l2 ->
+                | (id1, e) :: l1, (id2, t, _, _) :: l2 ->
                     if id1 = id2 then
                       if t <> type_expr e tenv then
                         None
@@ -112,7 +122,7 @@ let type_prog prog =
         | TDef s -> (
             let st = get_struct s in
             try
-              let _, t, _ = (List.find (fun (id, _, _) -> id = x)) st in
+              let _, t, _, _ = (List.find (fun (id, _, _, _) -> id = x)) st in
               t
             with Not_found -> Error.struct_no_field e s x)
         | t -> Error.not_a_struct e t)
@@ -121,7 +131,7 @@ let type_prog prog =
         | TDef s -> (
             let st = get_struct s in
             try
-              let _, t, m = (List.find (fun (id, _, _) -> id = x)) st in
+              let _, t, m, _ = (List.find (fun (id, _, _, _) -> id = x)) st in
               check e2 t tenv;
               if m then
                 TUnit
@@ -137,7 +147,7 @@ let type_prog prog =
             if name = id then
               try
                 List.iter2
-                  (fun t1 (t2, e) ->
+                  (fun (t1 ,_) (t2, e) ->
                     if t1 <> t2 then Error.type_error e t1 t2)
                   lt1 lt2;
                 Some cname
@@ -152,7 +162,7 @@ let type_prog prog =
               let lt2 = List.map fst lt2 in
               Error.unbound_construct e name lt2
           | (_, StrctDef _) :: ld -> constr_type ld
-          | (cname, ConstrDef a) :: ld -> (
+          | (cname, ConstrDef (a, _)) :: ld -> (
               match iter_args cname a with
               | Some name -> TDef name
               | None -> constr_type ld)

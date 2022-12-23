@@ -1,0 +1,44 @@
+\documentclass[tikz]{standalone}
+\standaloneconfig{border=1cm} 
+\usepackage[utf8]{inputenc}
+
+\usetikzlibrary{positioning}
+\usetikzlibrary{shapes}
+\usetikzlibrary{calc}
+
+\begin{document}
+  \tikzset{arrow/.style={-stealth, thick, draw=gray!80!black}}
+
+\begin{tikzpicture}[ampersand replacement=\&]
+
+    \node[rectangle, rounded corners, draw, fill=blue!20, align=center,
+        minimum height=1cm, text width=2cm] 
+      at (0,0) (L) {\textsc{Lexer}};
+
+    \node[rectangle, rounded corners, draw, fill=blue!20, align=center,
+        minimum height=1cm, text width=2cm] 
+      at (0,-3) (P) {\textsc{Parser}};
+
+    \node[rectangle, rounded corners, draw, fill=cyan!20, align=center,
+        minimum height=1cm] 
+      at (0,-6) (T) {\textsc{Typdef Verif}};
+    
+    \node[rectangle, rounded corners, draw, fill=cyan!20, align=center,
+        minimum height=1cm, text width=3cm] 
+      at (3,-9) (T1) {\textsc{Type Checker}};
+
+    \node[rectangle, rounded corners, draw, fill=cyan!20, align=center,
+        minimum height=1cm, text width=3cm] 
+      at (-3,-9) (T2) {\textsc{Type Infer}};
+    
+    \node[rectangle, rounded corners, draw, fill=red!20, align=center,
+        minimum height=1cm] 
+      at (0,-12) (D) {\textsc{Interpretation}};
+    
+    \path[arrow] (L) edge (P)
+    (P) edge (T)
+    (T) edge (T1) edge (T2)
+    (T1) edge (D)
+    (T2) edge (D);
+\end{tikzpicture}
+\end{document}
