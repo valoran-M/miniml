@@ -36,11 +36,19 @@ Le Mini-Ml est un sous ensemble de ML, il est composé de 2 parties :
 
 ## Les types
 
-Les types sont les suivants :
+les types sont les suivants :
+
+### Bases:
+
 - `int` : les entiers
 - `bool` : les booléens
 - `unit` : l'unité
-- `typedef s = {...}` : les structures définis par l'utilisateur
+
+### Utilisateur 
+- `type s = {id1 = e1; ...; idn = en;}` : Structures
+- `type s = | Enum1 |Enum2 ...` : Types énumérés
+- `type s = | Cons1 of t1 * ... * tn | ... | Const n` : Types algébriques
+- `type 'a s = | Some of 'a` : Types algébriques paramétré
 
 ## Les expressions
 
