@@ -59,6 +59,7 @@ Les expressions sont les suivantes :
 - `()` : l'unité
 - `e1 ~ e2` : Les expression binaires
     - ~ est un opérateur binaire parmis `+`, `-`, `*`, `/`, `mod`, `==`, `!=`, `<`, `<=`, `&&`, `||`
+    - l'égalité structurelle et la négation `=`, `<>`
 - `~ e` : Les expression unaires
     - ~ est un opérateur unaire parmis `-`, `not`
 - `if e1 then e2 else e3` : l'expression conditionnelle
@@ -66,9 +67,11 @@ Les expressions sont les suivantes :
 - `let rec x = e1 in e2` : l'expression de déclaration de fonction récursive
 - `fun x -> e` : l'expression de déclaration de fonction anonyme
 - `e1 e2` : l'expression d'appel de fonction
-- `{a1 = e1; ...; an = en}` : l'expression de création de structure
+- `{a1 = e1; ...; an = en;}` : l'expression de création de structure
 - `e.a` : l'expression d'accès à un champ de structure
 - `e1.a <- e2` : l'expression d'écriture à un champ de structure
+- `Enum` : Construction d'une varaible enum
+- `Constr(e1, ...)`: Construction d'une varaible algébriques
 
 
 
