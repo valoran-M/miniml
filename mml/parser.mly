@@ -163,7 +163,7 @@ typdes_def:
     | c=constr_def    { c }
 ;
 
-(* Déclaration *)
+(* Déclaration/fonction *)
 %inline let_expr:
     | LET id=IDENT 
         a=list(let_argument) 
@@ -186,6 +186,7 @@ typdes_def:
 let_argument:    
     | S_PAR id=IDENT t=type_forcing E_PAR   { ($sloc, id, Some t) }
     | id=IDENT                              { ($sloc, id, None) }
+    | S_PAR E_PAR                           { ($sloc, "", Some TUnit) }
 ;
 type_forcing:
     COLON t=types {t}

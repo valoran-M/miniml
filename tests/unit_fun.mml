@@ -1,0 +1,4 @@
+type s = {mutable i : int;}
+
+let s = {i = 3;} in
+let f () = s.i <- 4 in f (); s
