@@ -31,7 +31,7 @@ and print_value_in_mem p mem =
   | VStrct s -> print_struct mem s
   | VConstr (s, v) -> 
       Printf.printf "%s (" s;
-      print_list_value mem v
+      print_list_value mem v;
 
 and print_struct mem s =
   Printf.printf "{ ";
@@ -41,12 +41,13 @@ and print_struct mem s =
   print_char '}'
 
 and print_list_value mem = function
-  | []      -> ()
+  | []      -> print_char ')'
   | [v]     -> 
       print_value mem v; 
       print_char ')'
   | v :: l  -> 
       print_value mem v; 
+      print_string ", ";
       print_list_value mem l
 
 (* Interprète un programme *)

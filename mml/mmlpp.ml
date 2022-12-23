@@ -30,9 +30,11 @@ let rec typ_to_string = function
   | TFun (typ1, typ2) ->(
       match typ1 with 
       | TFun _ -> 
-        Printf.sprintf "(%s) -> %s" (typ_to_string typ1) (typ_to_string typ2)
+        Printf.sprintf "(%s) -> %s" 
+          (typ_to_string typ1) (typ_to_string typ2)
       | _ -> 
-        Printf.sprintf "%s -> %s" (typ_to_string typ1) (typ_to_string typ2))
+        Printf.sprintf "%s -> %s" 
+          (typ_to_string typ1) (typ_to_string typ2))
   | TDef s -> Printf.sprintf "%s" s
 
 let rec print_fields ppf = function
