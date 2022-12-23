@@ -9,8 +9,6 @@ Le Mini-Ml est un sous ensemble de ML, il est composé de 2 parties :
 <img src="./doc/diagram.png" 
    width="500"/>
 
-![diag](https://gitlab.com/valoranM/miniml/-/blob/master/doc/diagram.png =x500)
-
 ### Lexer:
   
   Utilise Ocamllex et génère des Token définis dans le parser
