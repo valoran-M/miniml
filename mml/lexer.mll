@@ -98,6 +98,7 @@ rule pattern = parse
     | "*"       { STAR }
     | "/"       { DIV }
     (* PAR et BRACE *)
+    | "()"      { UNIT }
     | "("       { S_PAR }
     | ")"       { E_PAR }
     | "{"       { S_BRACE }

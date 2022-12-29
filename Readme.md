@@ -67,6 +67,7 @@ Les expressions sont les suivantes :
 - `let x = e1 in e2` : l'expression de déclaration de variable
 - `let rec x = e1 in e2` : l'expression de déclaration de fonction récursive
 - `fun x -> e` : l'expression de déclaration de fonction anonyme
+- `fun () -> e` : fonction avec type unit en entrée
 - `e1 e2` : l'expression d'appel de fonction
 - `{a1 = e1; ...; an = en;}` : l'expression de création de structure
 - `e.a` : l'expression d'accès à un champ de structure

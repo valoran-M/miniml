@@ -35,12 +35,15 @@
 %token <string> IDENT       "x"
 %token <bool> BOOL          "b"
 %token <int> CST            "n"
+%token UNIT                 "()"
 (* Types *)
 %token <string>T_VAR        "'a"
-%token T_INT    "int"
-%token T_BOOL   "bool"
-%token T_UNIT   "unit"
-%token MUTABLE  "mutable"
+%token T_INT                "int"
+%token T_BOOL               "bool"
+%token T_UNIT               "unit"
+%token MUTABLE              "mutable"
+
+%token <string> CONSTR      "Uid"
 (* Expressions booléennes *)
 %token NOT      "!"
 %token EQU      "=="
@@ -62,25 +65,24 @@
 %token THEN     "then"
 %token  ELSE    "else"
 (* Autres *)
-%token SEMI     ";"
-%token COLON    ":"
-%token R_ARROW  "<-"
-%token L_ARROW  "->"
-%token DOT      "."
-%token S_PAR    "("
-%token E_PAR    ")"
-%token S_BRACE  "{"
-%token E_BRACE  "}"
-%token LET      "let"
-%token FUN      "fun"
-%token REC      "rec"
-%token IN       "in"
-%token BAR      "|"
-%token OF       "of"
-%token COMMA    ","
-%token EOF      ""
-%token TYPE     "type"
-%token <string> CONSTR      "Uid"
+%token SEMI           ";"
+%token COLON          ":"
+%token R_ARROW        "<-"
+%token L_ARROW        "->"
+%token DOT            "."
+%token S_PAR          "("
+%token E_PAR          ")"
+%token S_BRACE        "{"
+%token E_BRACE        "}"
+%token LET            "let"
+%token FUN            "fun"
+%token REC            "rec"
+%token IN             "in"
+%token BAR            "|"
+%token OF             "of"
+%token COMMA          ","
+%token EOF            ""
+%token TYPE           "type"
 
 %start program
 %type <Mml.prog> program
@@ -88,12 +90,11 @@
 
 
 (* Prioritées *)
-%nonassoc IN                    (* let ... in ... *)
+%nonassoc less_prio
+%nonassoc SEMI
 %nonassoc T_VAR
-%nonassoc IDENT
-%nonassoc SEMI                  (* { id1 = e1; ... idn = en } *)
 %nonassoc L_ARROW
-%nonassoc R_ARROW               (* type(t -> t -> t) *)
+%right    R_ARROW               (* type(t -> t -> t) *)
 %nonassoc THEN                  (* BELLOW else if ... then ... *)
 %nonassoc ELSE                  (* if ... then ... else ... *)
 
@@ -110,44 +111,48 @@
 
 %nonassoc prec_constr_empty     (* C vs C (x) *)
 (* Autres *)
-%nonassoc S_PAR S_BRACE CONSTR 
-          CST BOOL
+%nonassoc S_PAR
+          IDENT
 
 %%
 
 program:
     | l=list(typdes_def) 
-        c=expression EOF        
+        c=expr_seq EOF        
       { {types = l; code = c} }
 ;
 
 simple_expression:
     | n=CST                                         { mk_expr $sloc (Int n) }
     | b=BOOL                                        { mk_expr $sloc (Bool b) }
-    | S_PAR E_PAR                                   { mk_expr $sloc Unit }
+    | UNIT                                          { mk_expr $sloc Unit }
     | id=IDENT                                      { mk_expr $sloc (Var (id)) }
-    | S_PAR e=expression E_PAR                      { e }
+    | S_PAR e=expr_seq E_PAR                        { e }
     | e=simple_expression DOT id=IDENT              { mk_expr $sloc (GetF (e, id)) }
     | S_BRACE a=nonempty_list(body_struct) E_BRACE  { mk_expr $sloc (Strct a) }
     | id=CONSTR l=constr_param                      { mk_expr $sloc (Constr (id, l)) }
 ;
 
+expr_seq:
+    | e=expression %prec less_prio                   { e }
+    | e1=expression SEMI e2=expr_seq  { mk_expr $sloc (Seq(e1, e2)) }
+;
+
 expression:
-    | e=simple_expression                   { e }
-    | op=uop e=expression                   { mk_expr $sloc (Uop(op, e)) }
-    | e1=expression op=binop e2=expression  { mk_expr $sloc (Bop(op, e1, e2)) }
-    | e=expression se=simple_expression     { mk_expr $sloc (App(e, se)) }
-    | IF c=expression THEN e=expression     { mk_expr $sloc (If(c, e, None)) }
-    | IF c=expression THEN e1=expression 
-                      ELSE e2=expression    { mk_expr $sloc (If(c, e1, Some e2)) }
+    | e=simple_expression                     { e }
+    | op=uop e=expression                     { mk_expr $sloc (Uop(op, e)) }
+    | e1=expression op=binop e2=expression    { mk_expr $sloc (Bop(op, e1, e2)) }
+    | e=simple_expression se=simple_expression       { mk_expr $sloc (App(e, se)) }
+    | IF c=expr_seq THEN e=expression         { mk_expr $sloc (If(c, e, None)) }
+    | IF c=expr_seq THEN e1=expression 
+                    ELSE e2=expression        { mk_expr $sloc (If(c, e1, Some e2)) }
     | FUN a=fun_argument 
-          R_ARROW e=expression                
+          R_ARROW e=expr_seq                
         { let _, id, t = a in 
           mk_expr $sloc (Fun(id, t, e)) 
         }
     | e1=simple_expression DOT id=IDENT 
         L_ARROW e2=expression               { mk_expr $sloc (SetF(e1, id, e2)) }
-    | e1=expression SEMI e2=expression      { mk_expr $sloc (Seq(e1, e2)) }
     | e=let_expr                            { mk_expr $sloc e }
 ;
 
@@ -172,15 +177,15 @@ typdes_def:
     | LET id=IDENT 
           a=list(let_argument) 
           t=option(type_forcing) S_EQ 
-          e1=expression IN 
-          e2=expression                       
+          e1=expr_seq IN 
+          e2=expr_seq                   
         { 
           Let(id, mk_fun a e1, mk_fun_type a t, e2) 
         }
     | LET REC id=IDENT a=list(let_argument) 
           t=option(type_forcing) S_EQ 
-          e1=expression IN 
-          e2=expression                       
+          e1=expr_seq IN 
+          e2=expr_seq                      
         { 
           let t = mk_fun_type a t in
           Let(id, mk_expr $sloc (Fix(id, 
@@ -205,12 +210,12 @@ type_forcing:
       { (id, StrctDef a) }
 
 body_struct_def:
-    | m=boption(MUTABLE) id=IDENT COLON t=types SEMI    
+    | m=boption(MUTABLE) id=IDENT COLON t=types SEMI
       { (id, t, m, mk_loc $sloc) }
 ;
 
 body_struct:    
-    | id=IDENT S_EQ e=expression SEMI %prec S_EQ
+    | id=IDENT S_EQ e=expression SEMI
       { (id, e) }
 ;
 
@@ -241,6 +246,7 @@ constr_param:
       { [] }
     | S_PAR l=separated_nonempty_list(COMMA, expression) E_PAR
       { l }
+;
 
 (* Opération *)
 %inline uop:

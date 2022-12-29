@@ -33,22 +33,22 @@ type bop =
     | Or    | And
 
 type expr =
-    | Int     of int
-    | Bool    of bool
+    | Int       of int
+    | Bool      of bool
     | Unit
-    | Uop     of uop * expr_loc
-    | Bop     of bop * expr_loc * expr_loc
-    | Var     of string
-    | If      of expr_loc * expr_loc * expr_loc option
-    | Let     of string * expr_loc * typ option * expr_loc
-    | Fun     of string * typ option * expr_loc
-    | App     of expr_loc * expr_loc
-    | Fix     of string * typ option * expr_loc
-    | Strct   of (string * expr_loc) list
-    | GetF    of expr_loc * string
-    | SetF    of expr_loc * string * expr_loc
-    | Seq     of expr_loc * expr_loc
-    | Constr  of string * expr_loc list
+    | Uop       of uop * expr_loc
+    | Bop       of bop * expr_loc * expr_loc
+    | Var       of string
+    | If        of expr_loc * expr_loc * expr_loc option
+    | Let       of string * expr_loc * typ option * expr_loc
+    | Fun       of string * typ option * expr_loc
+    | App       of expr_loc * expr_loc
+    | Fix       of string * typ option * expr_loc
+    | Strct     of (string * expr_loc) list
+    | GetF      of expr_loc * string
+    | SetF      of expr_loc * string * expr_loc
+    | Seq       of expr_loc * expr_loc
+    | Constr    of string * expr_loc list
 
 and expr_loc =
   { loc : location

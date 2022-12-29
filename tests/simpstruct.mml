@@ -1,0 +1,3 @@
+type s = {a: int; b : int;}
+
+let s = {a = 3; b = 3;} in s
