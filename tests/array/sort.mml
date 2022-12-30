@@ -1,0 +1,26 @@
+(* trie par insetion *)
+
+let swap a i j = 
+  let tmp = a.(i) in
+  a.(i) <- a.(j);
+  a.(j) <- tmp
+in
+
+let sort a n = 
+  let rec min i acc =
+    if not (i < n)  then acc 
+    else( 
+      if a.(i) < a.(acc)  then min (i+1) i
+                      else min (i+1) acc)
+  in
+  let rec iter i = 
+    if i < n then (
+      swap a i (min (i +1) i);
+      iter (i + 1)
+    )
+  in
+  iter 0
+in
+
+let t = [|4; 7; 2; 1; 3; 9; 6; 0; 5; 8|] in
+sort t 10; t

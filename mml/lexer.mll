@@ -103,6 +103,8 @@ rule pattern = parse
     | ")"       { E_PAR }
     | "{"       { S_BRACE }
     | "}"       { E_BRACE }
+    | "[|"      { S_BRACKETBAR }
+    | "|]"      { E_BRACKETBAR }
     | eof       { EOF }
 
 and comment = parse

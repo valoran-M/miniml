@@ -15,6 +15,7 @@ type heap_value =
     | VClos   of string * expr_loc * value Env.t
     | VStrct  of (string, value) Hashtbl.t
     | VConstr of string * value list 
+    | VArray  of value array
 
 (* Affiche les valeurs retourner par eval_prog *)
 let rec print_value mem = function
@@ -32,6 +33,14 @@ and print_value_in_mem p mem =
   | VConstr (s, v) -> 
       Printf.printf "%s (" s;
       print_list_value mem v;
+  | VArray a ->
+      print_string "[|";
+      for i=0 to Array.length a - 2 do 
+          print_value mem (a.(i));
+          print_string "; "
+      done;
+      print_value mem (a.(Array.length a - 1));
+      print_string "|]\n"
 
 and print_struct mem s =
   Printf.printf "{ ";
@@ -107,6 +116,9 @@ let eval_prog (prog : prog) : value * (int, heap_value) Hashtbl.t =
     | If (c, e, None)     -> if evalb c env then eval e env
                                             else VUnit
     | Seq (e1, e2)        -> let _ = eval e1 env in eval e2 env
+    | Array l             -> create_array l env
+    | GetI (e, i)         -> get_index e i env
+    | SetI (e1, i, e2)    -> set_index e1 i e2 env
 
   (* Évaluation d'une expression dont la valeur est supposée entière *)
   and evali (e : expr_loc) (env : value Env.t) : int =
@@ -219,6 +231,24 @@ let eval_prog (prog : prog) : value * (int, heap_value) Hashtbl.t =
     let ptr = new_ptr () in
     Hashtbl.add mem ptr (VConstr (s, aux l));
     VPtr ptr
+  and create_array (l: expr_loc list) env: value=
+    let ptr = new_ptr () in
+    Hashtbl.add mem ptr (VArray (Array.of_list (List.map (fun e -> eval e env) l)));
+    VPtr ptr
+  and get_index (e: expr_loc) (i: expr_loc) env: value =
+    let ptr = (match eval e env with | VPtr ptr -> ptr | _ -> assert false) in
+    match Hashtbl.find mem ptr with
+    | VArray a ->(
+        try a.(evali i env)
+        with Invalid_argument s -> raise (Error.Error (Error.Invalid_argument s)))
+    | _ -> assert false
+  and set_index (e1: expr_loc) (i: expr_loc) (e2:expr_loc) env: value =
+    let ptr = (match eval e1 env with | VPtr ptr -> ptr | _ -> assert false) in
+    match Hashtbl.find mem ptr with
+    | VArray a ->(
+        try a.(evali i env) <- (eval e2 env); VUnit
+        with Invalid_argument s -> raise (Error.Error (Error.Invalid_argument s)))
+    | _ -> assert false
   in
 
   (eval prog.code Env.empty, mem)

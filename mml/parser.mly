@@ -12,6 +12,7 @@
         | []            -> expr
         | (loc, id, t) :: l  -> mk_expr loc (Fun(id, t, mk_fun l expr))
 
+
     let mk_fun_type xs t = 
       match t with
       | None -> None
@@ -74,6 +75,8 @@
 %token E_PAR          ")"
 %token S_BRACE        "{"
 %token E_BRACE        "}"
+%token S_BRACKETBAR     "[|"
+%token E_BRACKETBAR     "|]"
 %token LET            "let"
 %token FUN            "fun"
 %token REC            "rec"
@@ -130,30 +133,42 @@ simple_expression:
     | S_PAR e=expr_seq E_PAR                        { e }
     | e=simple_expression DOT id=IDENT              { mk_expr $sloc (GetF (e, id)) }
     | S_BRACE a=nonempty_list(body_struct) E_BRACE  { mk_expr $sloc (Strct a) }
+    | S_BRACKETBAR l=separated_list(SEMI, expression) E_BRACKETBAR
+      { mk_expr $sloc (Array l) }
+    | e=simple_expression DOT S_PAR i=expr_seq E_PAR 
+      { mk_expr $sloc (GetI(e, i))}
     | id=CONSTR l=constr_param                      { mk_expr $sloc (Constr (id, l)) }
 ;
 
 expr_seq:
-    | e=expression %prec less_prio                   { e }
+    | e=expression %prec less_prio    { e }
     | e1=expression SEMI e2=expr_seq  { mk_expr $sloc (Seq(e1, e2)) }
 ;
 
+app_expr:
+    | e=simple_expression { e }
+    | e=app_expr a=simple_expression
+        { mk_expr $sloc (App(e, a)) }
+
 expression:
-    | e=simple_expression                     { e }
-    | op=uop e=expression                     { mk_expr $sloc (Uop(op, e)) }
-    | e1=expression op=binop e2=expression    { mk_expr $sloc (Bop(op, e1, e2)) }
-    | e=simple_expression se=simple_expression       { mk_expr $sloc (App(e, se)) }
-    | IF c=expr_seq THEN e=expression         { mk_expr $sloc (If(c, e, None)) }
+    | e=simple_expression                       { e }
+    | op=uop e=expression                       { mk_expr $sloc (Uop(op, e)) }
+    | e1=expression op=binop e2=expression      { mk_expr $sloc (Bop(op, e1, e2)) }
+    | e=app_expr l=simple_expression
+        { mk_expr $sloc (App(e, l)) }
+    | IF c=expr_seq THEN e=expression           { mk_expr $sloc (If(c, e, None)) }
     | IF c=expr_seq THEN e1=expression 
-                    ELSE e2=expression        { mk_expr $sloc (If(c, e1, Some e2)) }
-    | FUN a=fun_argument 
-          R_ARROW e=expr_seq                
-        { let _, id, t = a in 
+                    ELSE e2=expression          { mk_expr $sloc (If(c, e1, Some e2)) }
+    | FUN a=fun_argument R_ARROW e=expr_seq                
+        { 
+          let _, id, t = a in 
           mk_expr $sloc (Fun(id, t, e)) 
         }
-    | e1=simple_expression DOT id=IDENT 
-        L_ARROW e2=expression               { mk_expr $sloc (SetF(e1, id, e2)) }
-    | e=let_expr                            { mk_expr $sloc e }
+    | e1=simple_expression DOT id=IDENT L_ARROW e2=expression 
+        { mk_expr $sloc (SetF(e1, id, e2)) }
+    | e1=simple_expression DOT S_PAR i=expr_seq E_PAR L_ARROW e2=expression
+        { mk_expr $sloc (SetI(e1, i, e2))}
+    | e=let_expr { mk_expr $sloc e }
 ;
 
 (* types *)
@@ -208,7 +223,7 @@ type_forcing:
     | TYPE id=IDENT S_EQ 
         S_BRACE a=nonempty_list(body_struct_def) E_BRACE                         
       { (id, StrctDef a) }
-
+;
 body_struct_def:
     | m=boption(MUTABLE) id=IDENT COLON t=types SEMI
       { (id, t, m, mk_loc $sloc) }

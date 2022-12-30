@@ -37,6 +37,7 @@ let rec typ_to_string = function
           (typ_to_string typ1) (typ_to_string typ2))
   | TDef s -> Printf.sprintf "%s" s
   | TParam (t, s) -> Printf.sprintf "(%s %s)" (typ_to_string t) s
+  | TArray t -> Printf.sprintf "%s array" (typ_to_string t)
 
 let rec print_fields ppf = function
   | [] -> fprintf ppf ""
@@ -105,12 +106,12 @@ let rec print_expr ppf = function
         (bop_to_string op)
         print_expr e2.expr
   | If (c, e1, Some e2) ->
-      fprintf ppf "@[if %a then@. @[<hv 2>%a@]@ else @[<hv 2>%a@]@]"
+      fprintf ppf "@[(if %a then@. @[<hv 2>%a@]@ else @[<hv 2>%a)@]@]"
         print_expr c.expr
         print_expr e1.expr
         print_expr e2.expr
   | If (c, e1, None ) ->
-      fprintf ppf "@[if %a then@. @[<hv 2>%a@]@ else @[<hv 2>()@]@]"
+      fprintf ppf "@[(if %a then@. @[<hv 2>%a@]@ else @[<hv 2>())@]@]"
         print_expr c.expr
         print_expr e1.expr
   | Seq (e1, e2) -> 
@@ -123,6 +124,11 @@ let rec print_expr ppf = function
       fprintf ppf "fix (%s: %s) = (%a)" x (typ_to_string t) print_expr e.expr
   | Fix (x, None, e) -> fprintf ppf "fix (%s) = (%a)" x print_expr e.expr
   | Constr (s, e) -> fprintf ppf "%s (%a)" s print_list_expr e
+  | Array e -> fprintf ppf "[| %a |]" print_list_expr e
+  | GetI (e, i) -> fprintf ppf "%a.(%a)" print_expr e.expr print_expr i.expr
+  | SetI (e1, i, e2) -> 
+      fprintf ppf "%a.(%a) <- %a" 
+        print_expr e1.expr print_expr i.expr print_expr e2.expr
 
 and print_list_expr ppf = function
   | [] -> fprintf ppf ""

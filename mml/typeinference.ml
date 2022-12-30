@@ -10,7 +10,7 @@ module SMap = Map.Make (String)
 
 type env = schema SMap.t
 
-let type_inference prog =
+let type_inference prog file =
   let types = List.rev prog.types in
 
   let new_var =
@@ -91,6 +91,7 @@ let type_inference prog =
         unify e t1 t2;
         unify e t1' t2'
     | TVar a, TVar b when a = b -> ()
+    | TArray a, TArray b -> unify e a b
     | TVar a, t | t, TVar a ->
         if occur a t then
           Error.type_error e (unfold_full t1) (unfold_full t2)
@@ -231,7 +232,8 @@ let type_inference prog =
             let env = SMap.add s { vars = VSet.empty; typ = t } env in
             w e env)
     | Seq (e1, e2) ->
-        ignore (w e1 env);
+        (if (unfold (w e1 env)) <> TUnit then
+          Errorcat.warn_not_unit file e1);
         w e2 env
     | Constr (name, ex) -> construct_infer e name ex env
     | Strct l -> struct_infer e l env types
@@ -261,6 +263,22 @@ let type_inference prog =
         | TVar _ -> 
             snd (get_struct_args_mut e x)
         | t -> Error.not_a_struct e1 t)
+    | Array l -> 
+        let var = TVar (new_var ()) in
+        List.iter (fun e -> unify e (w e env) var) l;
+        TArray var
+    | GetI (e, i) -> 
+        let var = TVar (new_var ()) in
+        unify e (w e env) (TArray var);
+        unify i (w i env) TInt;
+        var
+    | SetI (e1, i, e2) ->
+        let var = TVar (new_var ()) in
+        unify e1 (w e1 env) (TArray var);
+        unify i (w i env) TInt;
+        unify e2 (w e2 env) var;
+        TUnit
+
   and struct_infer e l env = function
     | [] -> 
         Error.struct_construct_error e

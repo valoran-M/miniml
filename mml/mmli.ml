@@ -25,7 +25,7 @@ let () =
     let prog = Parser.program Lexer.pattern lb in
     close_in c;
     (* ignore (Typechecker.type_prog prog); *)
-    ignore (Typeinference.type_inference prog);
+    ignore (Typeinference.type_inference prog file);
     let output_value, mem = Interpreter.eval_prog prog in
     Interpreter.print_value mem output_value;
     print_newline ()
@@ -41,6 +41,9 @@ let () =
       exit 1
   | Error.Error (Type_def (loc, s)) ->
       Errorcat.print_type_constr_error file loc s;
+      exit 1
+  | Error.Error (Invalid_argument s) ->
+      eprintf "Exception: Invalide_argument \"%s\"\n" s;
       exit 1
   | e ->
       eprintf "Anomaly: %s\n@." (Printexc.to_string e);

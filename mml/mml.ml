@@ -10,6 +10,7 @@ type typ =
     | TFun    of typ * typ
     | TDef    of string
     | TParam  of typ * string
+    | TArray  of typ 
 
 type enum = string list
 
@@ -47,8 +48,12 @@ type expr =
     | Strct     of (string * expr_loc) list
     | GetF      of expr_loc * string
     | SetF      of expr_loc * string * expr_loc
+    | GetI      of expr_loc * expr_loc
+    | SetI      of expr_loc * expr_loc * expr_loc
     | Seq       of expr_loc * expr_loc
     | Constr    of string * expr_loc list
+    | Array     of expr_loc list
+    
 
 and expr_loc =
   { loc : location

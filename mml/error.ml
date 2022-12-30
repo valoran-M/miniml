@@ -3,6 +3,7 @@ type error =
     | Unclosed      of int * int * int * string
     | Type_error    of Mml.expr_loc * string
     | Type_def      of Mml.location * string
+    | Invalid_argument of string
 
 exception Error of error
 

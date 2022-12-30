@@ -12,6 +12,7 @@ type heap_value =
     | VClos of string * Mml.expr_loc * value Env.t
     | VStrct of (string, value) Hashtbl.t
     | VConstr of string * value list
+    | VArray of value array
 
 val print_value : (int, heap_value) Hashtbl.t -> value -> unit
 
