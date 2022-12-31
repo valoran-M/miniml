@@ -53,6 +53,7 @@ type expr =
     | Seq       of expr_loc * expr_loc
     | Constr    of string * expr_loc list
     | Array     of expr_loc list
+    | NArray    of expr_loc * expr_loc
     
 
 and expr_loc =

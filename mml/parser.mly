@@ -77,6 +77,7 @@
 %token E_BRACE        "}"
 %token S_BRACKETBAR     "[|"
 %token E_BRACKETBAR     "|]"
+%token A_CREATE       "Array.create"
 %token LET            "let"
 %token FUN            "fun"
 %token REC            "rec"
@@ -126,18 +127,24 @@ program:
 ;
 
 simple_expression:
-    | n=CST                                         { mk_expr $sloc (Int n) }
-    | b=BOOL                                        { mk_expr $sloc (Bool b) }
-    | UNIT                                          { mk_expr $sloc Unit }
-    | id=IDENT                                      { mk_expr $sloc (Var (id)) }
-    | S_PAR e=expr_seq E_PAR                        { e }
-    | e=simple_expression DOT id=IDENT              { mk_expr $sloc (GetF (e, id)) }
-    | S_BRACE a=nonempty_list(body_struct) E_BRACE  { mk_expr $sloc (Strct a) }
+    | n=CST       { mk_expr $sloc (Int n) }
+    | b=BOOL      { mk_expr $sloc (Bool b) }
+    | UNIT        { mk_expr $sloc Unit }
+    | id=IDENT    { mk_expr $sloc (Var (id)) }
+    | S_PAR e=expr_seq E_PAR                        
+      { e }
+    | e=simple_expression DOT id=IDENT              
+      { mk_expr $sloc (GetF (e, id)) }
+    | S_BRACE a=nonempty_list(body_struct) E_BRACE  
+      { mk_expr $sloc (Strct a) }
     | S_BRACKETBAR l=separated_list(SEMI, expression) E_BRACKETBAR
       { mk_expr $sloc (Array l) }
+    | A_CREATE n=simple_expression e=simple_expression
+      { mk_expr $sloc (NArray(e, n)) }
     | e=simple_expression DOT S_PAR i=expr_seq E_PAR 
       { mk_expr $sloc (GetI(e, i))}
-    | id=CONSTR l=constr_param                      { mk_expr $sloc (Constr (id, l)) }
+    | id=CONSTR l=constr_param  
+      { mk_expr $sloc (Constr (id, l)) }
 ;
 
 expr_seq:

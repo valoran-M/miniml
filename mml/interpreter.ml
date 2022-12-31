@@ -117,6 +117,7 @@ let eval_prog (prog : prog) : value * (int, heap_value) Hashtbl.t =
                                             else VUnit
     | Seq (e1, e2)        -> let _ = eval e1 env in eval e2 env
     | Array l             -> create_array l env
+    | NArray (e, n)       -> create_narray e (evali n env) env
     | GetI (e, i)         -> get_index e i env
     | SetI (e1, i, e2)    -> set_index e1 i e2 env
 
@@ -234,6 +235,10 @@ let eval_prog (prog : prog) : value * (int, heap_value) Hashtbl.t =
   and create_array (l: expr_loc list) env: value=
     let ptr = new_ptr () in
     Hashtbl.add mem ptr (VArray (Array.of_list (List.map (fun e -> eval e env) l)));
+    VPtr ptr
+  and create_narray (e:expr_loc) (n:int) env: value =
+    let ptr = new_ptr () in
+    Hashtbl.add mem ptr (VArray (Array.make n (eval e env)));
     VPtr ptr
   and get_index (e: expr_loc) (i: expr_loc) env: value =
     let ptr = (match eval e env with | VPtr ptr -> ptr | _ -> assert false) in

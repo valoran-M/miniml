@@ -1,0 +1,20 @@
+let crible n = 
+  let a = Array.make n true in
+  a.(0) <- false;
+  a.(1) <- false;
+  let rec make_false p i =
+    if (i * p) < n then (
+      a.(i * p) <- false;
+      make_false p (i+1)
+    )
+  in
+  let rec iter i = 
+    if i < n && a.(i) then (
+      make_false i 2;
+      iter (i+1)
+    )
+  in
+  iter 2;
+  a
+in
+crible 10

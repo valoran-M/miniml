@@ -267,6 +267,9 @@ let type_inference prog file =
         let var = TVar (new_var ()) in
         List.iter (fun e -> unify e (w e env) var) l;
         TArray var
+    | NArray (e, n) ->
+        unify n (w n env) TInt;
+        TArray (w e env)
     | GetI (e, i) -> 
         let var = TVar (new_var ()) in
         unify e (w e env) (TArray var);

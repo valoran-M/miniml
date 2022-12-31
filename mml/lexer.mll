@@ -75,6 +75,7 @@ rule pattern = parse
         }
     | ident as name     { IDENT(name) }
     | tvar  as var      { T_VAR(var) } 
+    | "Array.make"      { A_CREATE }
     (* symboles *)
     | "="       { S_EQ }
     | "->"      { R_ARROW }

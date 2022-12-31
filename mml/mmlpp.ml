@@ -125,6 +125,7 @@ let rec print_expr ppf = function
   | Fix (x, None, e) -> fprintf ppf "fix (%s) = (%a)" x print_expr e.expr
   | Constr (s, e) -> fprintf ppf "%s (%a)" s print_list_expr e
   | Array e -> fprintf ppf "[| %a |]" print_list_expr e
+  | NArray (e, n) -> fprintf ppf "([| %a |] * (%a))" print_expr e.expr print_expr n.expr
   | GetI (e, i) -> fprintf ppf "%a.(%a)" print_expr e.expr print_expr i.expr
   | SetI (e1, i, e2) -> 
       fprintf ppf "%a.(%a) <- %a" 
