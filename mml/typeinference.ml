@@ -143,7 +143,8 @@ let type_inference prog file =
         let t = w e env in
         unify e t TBool;
         TBool
-    | Bop ((Le | Lt), e1, e2) ->
+    | Bop ((Le | Lt 
+          | Gr | Gre), e1, e2) ->
         let t1 = w e1 env in
         let t2 = w e2 env in
         unify e1 t1 TInt;

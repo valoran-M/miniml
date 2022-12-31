@@ -84,6 +84,7 @@ let bop_to_string = function
   | Equ   -> "==" | Nequ  -> "!="
   | Sequ  -> "="  | Snequ -> "<>"
   | Lt    -> "<"  | Le    -> "<="
+  | Gr    -> ">"  | Gre   -> ">="
   | And   -> "&&" | Or    -> "||"
 
 let rec print_expr ppf = function

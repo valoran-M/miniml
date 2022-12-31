@@ -31,6 +31,7 @@ type bop =
     | Equ   | Nequ
     | Sequ  | Snequ
     | Le    | Lt
+    | Gre   | Gr
     | Or    | And
 
 type expr =

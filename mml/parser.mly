@@ -51,6 +51,8 @@
 %token NEQU     "!="
 %token LT       "<"
 %token LE       "<="
+%token GR       ">"
+%token GRE      ">="
 %token AND      "&&"
 %token OR       "||"
 %token S_EQ     "="
@@ -75,8 +77,8 @@
 %token E_PAR          ")"
 %token S_BRACE        "{"
 %token E_BRACE        "}"
-%token S_BRACKETBAR     "[|"
-%token E_BRACKETBAR     "|]"
+%token S_BRACKETBAR   "[|"
+%token E_BRACKETBAR   "|]"
 %token A_CREATE       "Array.create"
 %token LET            "let"
 %token FUN            "fun"
@@ -107,7 +109,7 @@
 %nonassoc NOT                   (* expr *)
 
 %left     EQU NEQU DIFF S_EQ    (* expr( e == e == e) *)
-%left     LT LE                 (* expr( e < e < e) *)
+%left     LT LE GR GRE          (* expr( e < e < e) *)
 
 %left     PLUS MINUS            (* expr( e + e + e) *)
 %left     MOD                   (* expr( e mod e mod e) *)
@@ -121,7 +123,7 @@
 %%
 
 program:
-    | l=list(typdes_def) 
+    | l=list(types_def) 
         c=expr_seq EOF        
       { {types = l; code = c} }
 ;
@@ -135,14 +137,14 @@ simple_expression:
       { e }
     | e=simple_expression DOT id=IDENT              
       { mk_expr $sloc (GetF (e, id)) }
+    | e=simple_expression DOT S_PAR i=expr_seq E_PAR 
+      { mk_expr $sloc (GetI(e, i))}
     | S_BRACE a=nonempty_list(body_struct) E_BRACE  
       { mk_expr $sloc (Strct a) }
     | S_BRACKETBAR l=separated_list(SEMI, expression) E_BRACKETBAR
       { mk_expr $sloc (Array l) }
     | A_CREATE n=simple_expression e=simple_expression
       { mk_expr $sloc (NArray(e, n)) }
-    | e=simple_expression DOT S_PAR i=expr_seq E_PAR 
-      { mk_expr $sloc (GetI(e, i))}
     | id=CONSTR l=constr_param  
       { mk_expr $sloc (Constr (id, l)) }
 ;
@@ -189,7 +191,7 @@ types:
     | t1=types R_ARROW t2=types { TFun(t1, t2) }
     | S_PAR t=types E_PAR       { t }
 ;
-typdes_def:
+types_def:
     | s=struct_def    { s }
     | c=constr_def    { c }
 ;
@@ -285,6 +287,7 @@ constr_param:
     | EQU   { Equ } | NEQU  { Nequ }
     | S_EQ  { Sequ }| DIFF  { Snequ }
     | LE    { Le }  | LT    { Lt }
+    | GRE   { Gre}  | GR    { Gr }
     | OR    { Or }  | AND   { And }
 ;
 

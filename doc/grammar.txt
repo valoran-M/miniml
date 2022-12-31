@@ -1,0 +1,63 @@
+<program> ::=
+  [type_def]* <expr_seq> EOF
+
+<types> ::=
+  | int
+  | bool
+  | unit
+  | T_VAR
+  | T_VAR IDENT
+  | IDENT
+  | <types> -> <types>
+  | ( <types> )
+
+<types_def> ::=
+  | type IDENT = { [[mutable]? IDENT : <types>;]+ }
+  | type [T_VAR]? IDENT = [ | UIDENT [of [<types> *]* <types>]? ]
+
+<expr_seq> ::=
+  | <expr>
+  | <expr> ; <expr_seq>
+
+<expr> ::=
+  | <s_expr>
+  | <uop> <exprssion>
+  | <expr> <binop> <expr>
+  | <app_expr> <simple_expr>
+  | if <expr_seq> then <expr>
+  | if <expr_seq> then <expr> else <expr>
+  | fun <fun_args> -> <expr_seq>
+  | <s_expr>.IDENT <- <expr>
+  | <s_expr>.(<expr_seq>) <- <expr>
+  | let [rec]? IDENT [<let_ags>]* [:<types>] = <expr_seq> in <expr_seq>
+
+<s_expr> ::=
+  | n
+  | true | false
+  | ()
+  | IDENT
+  | ( expr_seq )
+  | <s_expr>.IDENT
+  | <s_expr>.(expr_seq)
+  | { [ IDENT = <expr>; ]* }
+  | [| [[ <s_expr>; ]* <s_expr>]? |]
+  | Array.create <s_expr> <s_expr>
+  | UIDENT [([<expr>, ]* <expr>)]?
+
+<let_args> ::=
+  | IDENT
+  | ()
+  | (IDENT: <types>)
+
+<uop> ::=
+  | -
+  | not
+
+<binop> ::=
+  | +   | -
+  | mod
+  | *   | / 
+  | ==  | !=
+  | =   | <>
+  | <=  | <
+  | ||  | &&

@@ -91,6 +91,8 @@ rule pattern = parse
     | "<>"      { DIFF }
     | "<"       { LT }
     | "<="      { LE }
+    | ">"       { GR }
+    | ">="      { GRE }
     | "&&"      { AND }
     | "||"      { OR }
     (* opérations arithmétiques *)

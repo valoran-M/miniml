@@ -92,6 +92,7 @@ let eval_prog (prog : prog) : value * (int, heap_value) Hashtbl.t =
     | Bop ((Equ   | Nequ 
           | Sequ  | Snequ
           | Le    | Lt 
+          | Gr    | Gre
           | Or    | And), _, _))    -> VBool (evalb e env)
     (* Opération Arithmétique *)
     | Int n           -> VInt n
@@ -148,6 +149,9 @@ let eval_prog (prog : prog) : value * (int, heap_value) Hashtbl.t =
                                                 (eval e2 env))
     | Bop (Le, e1, e2)    -> evali e1 env <= evali e2 env
     | Bop (Lt, e1, e2)    -> evali e1 env < evali e2 env
+    | Bop (Gre, e1, e2)   -> evali e1 env >= evali e2 env
+    | Bop (Gr, e1, e2)    -> evali e1 env > evali e2 env
+
     | Bop (Or, e1, e2)    -> evalb e1 env || evalb e2 env
     | Bop (And, e1, e2)   -> evalb e1 env && evalb e2 env
     | _ -> (
