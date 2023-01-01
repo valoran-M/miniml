@@ -80,9 +80,7 @@ let print_prog_lines c fl ll fc lc =
   let start = String.make fc '.' in
   eprintf
     "%s%d | %s%s@."
-    (make_alig fl)
-    fl
-    start
+    (make_alig fl) fl start
     (String.sub line fc (String.length line - fc));
   for i = fl + 1 to ll - 1 do
     eprintf "%s%d | %s@." (make_alig i) i (input_line c)
@@ -122,7 +120,6 @@ let warn_color = "fg_mag"
 let err_color = "fg_red"
 
 let print_info file pos color =
-  add_ansi_marking err_formatter;
   report file pos;
   print_prog file pos color
 
@@ -162,3 +159,13 @@ let print_type_constr_error file loc s =
   let pose = pose_lex loc.fc loc.lc in
   print_info file pose err_color;
   eprintf "@{<bold>@{<fg_red>Error@}@}: @[%s@]@." s
+
+let print_error err file =
+  add_ansi_marking err_formatter;
+  match err with
+  | Error.Unclosed (l, fc, lc, s) -> print_unclosed_error file l fc lc s
+  | Error.Missing_semi l -> print_missing_semi file l
+  | Error.Type_error (e, s) -> print_type_error file e s
+  | Error.Type_def (loc, s) -> print_type_constr_error file loc s
+  | _ -> ()
+
