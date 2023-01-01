@@ -27,7 +27,7 @@ let () =
     (* ignore (Typechecker.type_prog prog); *)
     ignore (Typeinference.type_inference prog file);
     let output_value, mem = Interpreter.eval_prog prog in
-    Interpreter.print_value mem output_value;
+    Value.print_value mem output_value;
     print_newline ()
   with
   | Error.Error (Unclosed (l, fc, lc, s)) ->

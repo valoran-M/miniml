@@ -1,63 +1,5 @@
 open Mml
-
-(* Environnement : associe des valeurs à des noms de variables *)
-module Env = Map.Make (String)
-
-(* Valeurs *)
-type value =
-    | VInt  of int
-    | VBool of bool
-    | VUnit
-    | VPtr  of int
-
-(* Élements du tas *)
-type heap_value =
-    | VClos   of string * expr_loc * value Env.t
-    | VStrct  of (string, value) Hashtbl.t
-    | VConstr of string * value list 
-    | VArray  of value array
-
-(* Affiche les valeurs retourner par eval_prog *)
-let rec print_value mem = function
-  | VInt n  -> Printf.printf "%d" n
-  | VBool b -> Printf.printf "%b" b
-  | VUnit   -> Printf.printf "()"
-  | VPtr p  -> 
-      Printf.printf "@%d ->" p; 
-      print_value_in_mem p mem
-
-and print_value_in_mem p mem =
-  match Hashtbl.find mem p with 
-  | VClos (s, _, _) -> Printf.printf "%s" s 
-  | VStrct s -> print_struct mem s
-  | VConstr (s, v) -> 
-      Printf.printf "%s (" s;
-      print_list_value mem v;
-  | VArray a ->
-      print_string "[|";
-      for i=0 to Array.length a - 2 do 
-          print_value mem (a.(i));
-          print_string "; "
-      done;
-      print_value mem (a.(Array.length a - 1));
-      print_string "|]\n"
-
-and print_struct mem s =
-  Printf.printf "{ ";
-  Hashtbl.iter (fun id v -> Printf.printf "%s = " id; 
-                            print_value mem v; 
-                            Printf.printf "; ") s;
-  print_char '}'
-
-and print_list_value mem = function
-  | []      -> print_char ')'
-  | [v]     -> 
-      print_value mem v; 
-      print_char ')'
-  | v :: l  -> 
-      print_value mem v; 
-      print_string ", ";
-      print_list_value mem l
+open Value
 
 (* Interprète un programme *)
 let eval_prog (prog : prog) : value * (int, heap_value) Hashtbl.t =
@@ -72,12 +14,74 @@ let eval_prog (prog : prog) : value * (int, heap_value) Hashtbl.t =
       !cpt
   in
 
-  (* rend une strucutre ou si elle n'existe pas 
+  (* rend une strucutre si elle n'existe pas 
       déclanche une erreur *)
   let find_struct a =
     match Hashtbl.find mem a with
     | VStrct s -> s
     | _ -> assert false
+  in
+
+  let rec struc_equal e (v1: value) (v2: value) : bool =
+    match v1, v2 with
+    | VInt  v1  , VInt  v2  -> v1 = v2
+    | VBool b1  , VBool b2  -> b1 = b2
+    | VPtr  pt1 , VPtr  pt2 -> (
+        match (Hashtbl.find mem pt1, Hashtbl.find mem pt2) with 
+        | VClos _, _ | _, VClos _ -> 
+            Error.compare_fun e;
+        | VStrct s1, VStrct s2 -> 
+            Hashtbl.fold 
+              (fun id v acc -> acc && struc_equal e v (Hashtbl.find s2 id)) 
+              s1 true
+        | VConstr (s1, c1), VConstr (s2, c2) when s1 = s2 -> 
+            List.fold_left2 
+              (fun acc v1 v2 -> acc && struc_equal e v1 v2) 
+              true c1 c2
+        | _, _ -> false) 
+    | _, _ -> false
+  in 
+
+  let set_index (v1: value) (i: int) (v2:value) : value =
+    let ptr = (match v1 with | VPtr ptr -> ptr | _ -> assert false) in
+    match Hashtbl.find mem ptr with
+    | VArray a ->(
+        try a.(i) <- (v2); VUnit
+        with Invalid_argument s -> raise (Error.Error (Error.Invalid_argument s)))
+    | _ -> assert false
+  in
+
+  (* eval fun id -> e *)
+  let eval_fun (id: string) (e: expr_loc) env :value =
+    let ptr = new_ptr () in
+    Hashtbl.add mem ptr (VClos (id, e, env));
+    VPtr ptr
+  in
+
+  (* eval e2.id <- e2 *)
+  let eval_setf (v1: value) (id: string) (v2: value) : value =
+    match v1 with
+    | VPtr a ->
+        let s = find_struct a in
+        Hashtbl.replace s id v2;
+        VUnit
+    | _ -> assert false
+  in
+
+  (* eval e.(i) *)
+  let get_index (v: value) (i: int): value =
+    let ptr = (match v with | VPtr ptr -> ptr | _ -> assert false) in
+    match Hashtbl.find mem ptr with
+    | VArray a ->(
+        try a.(i)
+        with Invalid_argument s -> raise (Error.Error (Error.Invalid_argument s)))
+    | _ -> assert false
+  in
+
+  let create_narray (v:value) (n:int): value =
+    let ptr = new_ptr () in
+    Hashtbl.add mem ptr (VArray (Array.make n v));
+    VPtr ptr
   in
 
   (* Interprétation d'une expression, en fonction d'un environnement
@@ -103,12 +107,12 @@ let eval_prog (prog : prog) : value * (int, heap_value) Hashtbl.t =
     (* Fonction *)
     | Fun (id, _, e)      -> eval_fun id e env
     | Let (id, e1, _, e2) -> eval e2 (Env.add id (eval e1 env) env)
-    | App (e1, e2)        -> eval_app e1 e2 env
+    | App (e1, e2)        -> eval_app (eval e1 env) (eval e2 env)
     | Fix (id, _, e)      -> eval_fix id e env
     (* struct *)
     | Strct s             -> create_struct s env
     | GetF (e, id)        -> eval_getf e id env
-    | SetF (e1, id, e2)   -> eval_setf e1 id e2 env
+    | SetF (e1, id, e2)   -> eval_setf (eval e1 env) id (eval e2 env)
     (* Constr *)
     | Constr (s, l)       -> create_const s l env
     (* Autres *)
@@ -118,9 +122,9 @@ let eval_prog (prog : prog) : value * (int, heap_value) Hashtbl.t =
                                             else VUnit
     | Seq (e1, e2)        -> let _ = eval e1 env in eval e2 env
     | Array l             -> create_array l env
-    | NArray (e, n)       -> create_narray e (evali n env) env
-    | GetI (e, i)         -> get_index e i env
-    | SetI (e1, i, e2)    -> set_index e1 i e2 env
+    | NArray (e, n)       -> create_narray (eval e env) (evali n env)
+    | GetI (e, i)         -> get_index (eval e env) (evali i env)
+    | SetI (e1, i, e2)    -> set_index (eval e1 env) (evali i env) (eval e2 env)
 
   (* Évaluation d'une expression dont la valeur est supposée entière *)
   and evali (e : expr_loc) (env : value Env.t) : int =
@@ -158,36 +162,12 @@ let eval_prog (prog : prog) : value * (int, heap_value) Hashtbl.t =
         match eval e env with
         | VBool b -> b
         | _ -> assert false)
-  and struc_equal e (v1: value) (v2: value) : bool =
-    match v1, v2 with
-    | VInt  v1  , VInt  v2  -> v1 = v2
-    | VBool b1  , VBool b2  -> b1 = b2
-    | VPtr  pt1 , VPtr  pt2 -> (
-        match (Hashtbl.find mem pt1, Hashtbl.find mem pt2) with 
-        | VClos _, _ | _, VClos _ -> 
-            Error.compare_fun e;
-        | VStrct s1, VStrct s2 -> 
-            Hashtbl.fold 
-              (fun id v acc -> acc && struc_equal e v (Hashtbl.find s2 id)) 
-              s1 true
-        | VConstr (s1, c1), VConstr (s2, c2) when s1 = s2 -> 
-            List.fold_left2 
-              (fun acc v1 v2 -> acc && struc_equal e v1 v2) 
-              true c1 c2
-        | _, _ -> false) 
-    | _, _ -> false
-  (* eval fun id -> e *)
-  and eval_fun (id: string) (e: expr_loc) env :value =
-    let ptr = new_ptr () in
-    Hashtbl.add mem ptr (VClos (id, e, env));
-    VPtr ptr
   (* eval e1 e2 *)
-  and eval_app (e1: expr_loc) (e2: expr_loc) env :value=
-    let val_e2 = eval e2 env in
-    match eval e1 env with
+  and eval_app (v1: value) (v2: value) :value=
+    match v1 with
     | VPtr p -> (
         match Hashtbl.find mem p with
-        | VClos (id, e, env) -> eval e (Env.add id val_e2 env)
+        | VClos (id, e, env) -> eval e (Env.add id v2 env)
         | _ -> assert false)
     | _ -> assert false
   (* eval Fix(id, t, e) *)
@@ -207,15 +187,6 @@ let eval_prog (prog : prog) : value * (int, heap_value) Hashtbl.t =
           struct_list;
         VPtr ptr
     | _ -> assert false
-  (* eval e2.id <- e2 *)
-  and eval_setf (e1: expr_loc) (id: string) (e2: expr_loc) env : value =
-    let new_val = eval e2 env in
-    match eval e1 env with
-    | VPtr a ->
-        let s = find_struct a in
-        Hashtbl.replace s id new_val;
-        VUnit
-    | _ -> assert false
   (* eval e.id *)
   and eval_getf (e: expr_loc) (id: string) env : value =
     match eval e env with
@@ -229,35 +200,13 @@ let eval_prog (prog : prog) : value * (int, heap_value) Hashtbl.t =
     Hashtbl.add mem ptr (VStrct data);
     VPtr ptr
   and create_const (s: string) (l: expr_loc list) env :value =
-    let rec aux = function
-      | [] -> []
-      | e::l -> eval e env :: aux l
-    in
     let ptr = new_ptr () in
-    Hashtbl.add mem ptr (VConstr (s, aux l));
+    Hashtbl.add mem ptr (VConstr (s, List.map (fun e -> eval e env) l));
     VPtr ptr
   and create_array (l: expr_loc list) env: value=
     let ptr = new_ptr () in
     Hashtbl.add mem ptr (VArray (Array.of_list (List.map (fun e -> eval e env) l)));
     VPtr ptr
-  and create_narray (e:expr_loc) (n:int) env: value =
-    let ptr = new_ptr () in
-    Hashtbl.add mem ptr (VArray (Array.make n (eval e env)));
-    VPtr ptr
-  and get_index (e: expr_loc) (i: expr_loc) env: value =
-    let ptr = (match eval e env with | VPtr ptr -> ptr | _ -> assert false) in
-    match Hashtbl.find mem ptr with
-    | VArray a ->(
-        try a.(evali i env)
-        with Invalid_argument s -> raise (Error.Error (Error.Invalid_argument s)))
-    | _ -> assert false
-  and set_index (e1: expr_loc) (i: expr_loc) (e2:expr_loc) env: value =
-    let ptr = (match eval e1 env with | VPtr ptr -> ptr | _ -> assert false) in
-    match Hashtbl.find mem ptr with
-    | VArray a ->(
-        try a.(evali i env) <- (eval e2 env); VUnit
-        with Invalid_argument s -> raise (Error.Error (Error.Invalid_argument s)))
-    | _ -> assert false
-  in
+  in 
 
   (eval prog.code Env.empty, mem)
