@@ -1,30 +1,32 @@
 open Mml
 
-let rec verif_no_tvar_struct name = function
-  | [] -> ()
-  | (_, TVar t, _, loc) :: _ -> 
-      Error.struct_def_error name loc t
-  | _ :: l -> verif_no_tvar_struct name l
-
-let rec verif_only_tvar_type_constr name s l =
-  let rec aux = function
-  | [] -> ()
-  | (TVar ts, l) :: _ when ts <> s -> 
-      Error.constr_def_error name l ts
-  | _ :: l -> aux l
+let verif_struct s name =
+  let f acc s =
+    match s with
+    | _, TVar t, _, loc ->
+        Error.struct_def_error loc (Error.struct_undefined_type name t)
+    | s, _, _, loc ->
+        if List.mem s acc then
+          Error.struct_def_error loc (Error.struct_same_label_name s)
+        else
+          s :: acc
   in
-  match l with 
-  | [] -> ()
-  | (_, l) :: lt -> aux l; verif_only_tvar_type_constr name s lt
+  ignore (List.fold_left f [] s);
+  ()
 
-let rec verif_construct = function
-  | [] -> ()
-  | (name, StrctDef s) :: l -> 
-      verif_no_tvar_struct name s;
-      verif_construct l
-  | (name, ConstrDef (l, None)) :: lt  -> 
-      verif_only_tvar_type_constr name "" l;
-      verif_construct lt
-  | (name, ConstrDef (l, Some s)) :: lt -> 
-      verif_only_tvar_type_constr name s l;
-      verif_construct lt
+let verif_only_tvar_type_constr name s l =
+  let f = function
+    | TVar ts, l when ts <> s -> Error.constr_def_error name l ts
+    | _ -> ()
+  in
+  let alg_verif a = List.iter f (snd a) in
+  List.iter alg_verif l
+
+let verif_construct types =
+  let f t =
+    match t with
+    | name, StrctDef s -> verif_struct s name
+    | name, ConstrDef (l, None) -> verif_only_tvar_type_constr name "" l
+    | name, ConstrDef (l, Some s) -> verif_only_tvar_type_constr name s l
+  in
+  List.iter f types

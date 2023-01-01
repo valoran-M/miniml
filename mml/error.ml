@@ -85,7 +85,7 @@ let unbound_construct e name tl =
 let nb_arg_construct e name n1 n2 =
   raise_type_error e
     (Printf.sprintf
-       "The constructor %s expects %d argument(s),\n\
+       "The constructor '%s' expects %d argument(s),\n\
        \ but is applied here to %d argument(s)\n"
        name n1 n2)
 
@@ -94,14 +94,20 @@ let compare_fun e  =
 
 (* types def *)
 
-let struct_def_error name loc t = 
-  raise (Error (Type_def (loc,
-    (Printf.sprintf 
-      "The definition of struct %s contains this undefined %s type" 
-      name t))))
+let struct_undefined_type s t = 
+  Printf.sprintf 
+      "The definition of struct '%s' contains this undefined %s type" 
+      s t
+
+let struct_same_label_name s = 
+  Printf.sprintf "Two labels are names %s" s
+
+let struct_def_error loc s = 
+  raise (Error (Type_def (loc, s)))
+    
 
 let constr_def_error name loc t = 
   raise (Error (Type_def (loc,
     (Printf.sprintf 
-      "The definition of %s contains this undefined %s type" 
+      "The definition of '%s' contains this undefined %s type" 
       name t))))
