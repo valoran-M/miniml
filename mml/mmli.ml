@@ -33,6 +33,9 @@ let () =
   | Error.Error (Unclosed (l, fc, lc, s)) ->
       Errorcat.print_unclosed_error file l fc lc s;
       exit 1
+  | Error.Error (Missing_semi l) -> 
+      Errorcat.print_missing_semi file l;
+      exit 1
   | Parser.Error ->
       Errorcat.print_syntax_err file lb;
       exit 1

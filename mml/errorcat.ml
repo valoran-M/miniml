@@ -121,6 +121,11 @@ let warn_color = "fg_mag"
 
 let err_color = "fg_red"
 
+let print_info file pos color =
+  add_ansi_marking err_formatter;
+  report file pos;
+  print_prog file pos color
+
 (* Warning *)
 
 let warn_not_unit file e =
@@ -133,31 +138,27 @@ let warn_not_unit file e =
 
 (* Error *)
 
+let print_missing_semi file l =
+  print_info file (pose_lex l.fc l.lc) err_color;
+  eprintf "@{<bold>@<fg_red>Error@}: Missing semicolon@."
+
 let print_unclosed_error file l fc lc s =
-  add_ansi_marking err_formatter;
-  report file (l, l, fc, lc);
-  print_prog file (l, l, fc, lc) err_color;
+  print_info file (l, l, fc, lc) err_color;
   eprintf "@{<bold>@{<fg_red>Error@}@}: lexical error: %s@." s
 
 let print_syntax_err file lb =
-  add_ansi_marking err_formatter;
   let pose = pose_lex (lexeme_start_p lb) (lexeme_end_p lb) in
-  report file pose;
-  print_prog file pose err_color;
+  print_info file pose err_color;
   eprintf "@{<bold>@{<fg_red>Error@}@}: syntax error@."
 
 let print_type_error file e s =
-  add_ansi_marking err_formatter;
   let pose = pose_lex e.loc.fc e.loc.lc in
-  report file pose;
-  print_prog file pose err_color;
+  print_info file pose err_color;
   eprintf "@{<bold>@{<fg_red>Error@}@}: @[%s@]@." s
 
 (* types def *)
 
 let print_type_constr_error file loc s =
-  add_ansi_marking err_formatter;
   let pose = pose_lex loc.fc loc.lc in
-  report file pose;
-  print_prog file pose err_color;
+  print_info file pose err_color;
   eprintf "@{<bold>@{<fg_red>Error@}@}: @[%s@]@." s

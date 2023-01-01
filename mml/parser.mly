@@ -1,4 +1,5 @@
 %{
+    open Lexing
     open Mml
 
     let mk_loc (fc, lc) = 
@@ -12,6 +13,10 @@
         | []            -> expr
         | (loc, id, t) :: l  -> mk_expr loc (Fun(id, t, mk_fun l expr))
 
+    let unclosed_error (fc, lc) s sexp = 
+      let s = s ^ " unclosed : " ^ sexp ^ " expected" in 
+      Error.raise_unclosed [(fc.pos_lnum, fc.pos_cnum - fc.pos_bol, 
+                                            lc.pos_cnum - lc.pos_bol)] s
 
     let mk_fun_type xs t = 
       match t with
@@ -135,16 +140,20 @@ simple_expression:
     | id=IDENT    { mk_expr $sloc (Var (id)) }
     | S_PAR e=expr_seq E_PAR                        
       { e }
+    | S_PAR expr_seq error 
+      { unclosed_error ($loc($1)) "\"(\"" "\")\"" }
     | e=simple_expression DOT id=IDENT              
       { mk_expr $sloc (GetF (e, id)) }
     | e=simple_expression DOT S_PAR i=expr_seq E_PAR 
-      { mk_expr $sloc (GetI(e, i))}
+      { mk_expr $sloc (GetI(e, i)) }
     | S_BRACE a=nonempty_list(body_struct) E_BRACE  
       { mk_expr $sloc (Strct a) }
+    | S_BRACE nonempty_list(body_struct) error
+      { unclosed_error ($loc($1)) "\"{\"" "\"}\"" }
     | S_BRACKETBAR l=separated_list(SEMI, expression) E_BRACKETBAR
       { mk_expr $sloc (Array l) }
-    | A_CREATE n=simple_expression e=simple_expression
-      { mk_expr $sloc (NArray(e, n)) }
+    | S_BRACKETBAR separated_list(SEMI, expression) error
+      { unclosed_error ($loc($1)) "\"[|\"" "\" |]\""  }
     | id=CONSTR l=constr_param  
       { mk_expr $sloc (Constr (id, l)) }
 ;
@@ -177,6 +186,8 @@ expression:
         { mk_expr $sloc (SetF(e1, id, e2)) }
     | e1=simple_expression DOT S_PAR i=expr_seq E_PAR L_ARROW e2=expression
         { mk_expr $sloc (SetI(e1, i, e2))}
+    | A_CREATE n=simple_expression e=simple_expression
+      { mk_expr $sloc (NArray(e, n)) }
     | e=let_expr { mk_expr $sloc e }
 ;
 
@@ -236,11 +247,15 @@ type_forcing:
 body_struct_def:
     | m=boption(MUTABLE) id=IDENT COLON t=types SEMI
       { (id, t, m, mk_loc $sloc) }
+    | boption(MUTABLE) IDENT COLON types error
+      { Error.raise_missing_semi (mk_loc ($loc($5))) }
 ;
 
 body_struct:    
     | id=IDENT S_EQ e=expression SEMI
       { (id, e) }
+    | IDENT S_EQ expression error
+      { Error.raise_missing_semi (mk_loc ($loc($4))) }
 ;
 
 (* Constructeur *)
