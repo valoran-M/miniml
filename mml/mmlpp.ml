@@ -96,23 +96,23 @@ let rec print_expr ppf = function
       fprintf ppf "fun (%s: %s) -> %a" x (typ_to_string t) print_expr e.expr
   | Fun (x, None, e) -> fprintf ppf "fun (%s) -> %a" x print_expr e.expr
   | Let (x, e1, _, e2) ->
-      fprintf ppf "@[<hv 10>(let %s =@ %a in@.%a)@]"
+      fprintf ppf "@[(let %s =@ %a in@ %a)@]"
         x print_expr e1.expr
         print_expr e2.expr
   | App (e1, e2) -> fprintf ppf "(%a %a)" print_expr e1.expr print_expr e2.expr
-  | Uop (op, e) -> fprintf ppf "(@[%s %a@])" (uop_to_string op) print_expr e.expr
+  | Uop (op, e) -> fprintf ppf "(%s %a)" (uop_to_string op) print_expr e.expr
   | Bop (op, e1, e2) ->
       fprintf ppf "(@[%a %s %a)@]"
         print_expr e1.expr
         (bop_to_string op)
         print_expr e2.expr
   | If (c, e1, Some e2) ->
-      fprintf ppf "@[(if %a then@. @[<hv 2>%a@]@ else @[<hv 2>%a)@]@]"
+      fprintf ppf "@[if %a then@ %a else@ %a@]"
         print_expr c.expr
         print_expr e1.expr
         print_expr e2.expr
   | If (c, e1, None ) ->
-      fprintf ppf "@[(if %a then@. @[<hv 2>%a@]@ else @[<hv 2>())@]@]"
+      fprintf ppf "@[if %a then@ %a else ()@]"
         print_expr c.expr
         print_expr e1.expr
   | Seq (e1, e2) -> 
