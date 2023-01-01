@@ -92,6 +92,17 @@ Les expressions sont les suivantes :
 - [sort](./tests/array/sort.mml)
 - [Crible d'Ératosthène](./tests/array/crible.mml)
 
+# Message erreur
+
+Quand il y a une erreur la ligne et la colonne est toujour indiqué
+et affiché comme ça:
+```
+File "file", line l, character n-n:
+l| .............
+      ^^^
+Error: ....
+```
+
 # Avancée
 
 |              | mmllexer | mmlparser | typechecker | interpreter |
