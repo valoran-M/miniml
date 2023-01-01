@@ -17,6 +17,8 @@ Le Mini-Ml est un sous ensemble de ML, il est composé de 2 parties :
   
   Utilise Menhir, prend les token générés par le lexer
   et crée des expressions qui respectent la grammaire.
+  
+  [grammaire](./doc/grammar.txt)
 
 ### Typdef Verif:
 
@@ -32,7 +34,10 @@ Le Mini-Ml est un sous ensemble de ML, il est composé de 2 parties :
 ### Type Infer:
   
   Détermine les types des expressions et vérifie les contraintes,
-  si elles ne sont pas respectées il produit une erreur. 
+  si elles ne sont pas respectées il produit une erreur.
+
+  [règle de typage](./doc/typage.txt)
+
   (Utilisation de l'algo W [^1])
 
 ## Les types
@@ -59,7 +64,7 @@ Les expressions sont les suivantes :
 - `false` : un booléen faux
 - `()` : l'unité
 - `e1 ~ e2` : Les expression binaires
-    - ~ est un opérateur binaire parmis `+`, `-`, `*`, `/`, `mod`, `==`, `!=`, `<`, `<=`, `&&`, `||`
+    - ~ est un opérateur binaire parmis `+`, `-`, `*`, `/`, `mod`, `==`, `!=`, `<`, `<=`, `>`, '>=', `&&`, `||`
     - l'égalité structurelle et la négation `=`, `<>`
 - `~ e` : Les expression unaires
     - ~ est un opérateur unaire parmis `-`, `not`
@@ -72,10 +77,20 @@ Les expressions sont les suivantes :
 - `{a1 = e1; ...; an = en;}` : l'expression de création de structure
 - `e.a` : l'expression d'accès à un champ de structure
 - `e1.a <- e2` : l'expression d'écriture à un champ de structure
+- `[| e1; ...; en |]` : tableau mutable
+- `Array.make n e` : tableau de taille n contentant la valeur de e
+- `e.(i)` : case i du tableu e
+- `t.(i) <- e` : chnage la valeur de la case i du tableau t en la valeur de e 
 - `Enum` : Construction d'une variable enum
 - `Constr(e1, ...)`: Construction d'une variable algébrique
 
+# Exemple
 
+- [fact](./tests/fact.mml)
+- [fact2](./tests/fact2.mml)
+- [syracuses](./tests/syracuse.mml)
+- [sort](./tests/array/sort.mml)
+- [Crible d'Ératosthène](./tests/array/crible.mml)
 
 # Avancée
 
