@@ -68,6 +68,13 @@ let eval_prog (prog : prog) : value * (int, heap_value) Hashtbl.t =
     | _ -> assert false
   in
 
+  (* eval e.id *)
+  let eval_getf (v: value) (id: string) : value =
+    match v with
+    | VPtr a -> Hashtbl.find (find_struct a) id
+    | _ -> assert false
+  in
+
   (* eval e.(i) *)
   let get_index (v: value) (i: int): value =
     let ptr = (match v with | VPtr ptr -> ptr | _ -> assert false) in
@@ -111,7 +118,7 @@ let eval_prog (prog : prog) : value * (int, heap_value) Hashtbl.t =
     | Fix (id, _, e)      -> eval_fix id e env
     (* struct *)
     | Strct s             -> create_struct s env
-    | GetF (e, id)        -> eval_getf e id env
+    | GetF (e, id)        -> eval_getf (eval e env) id
     | SetF (e1, id, e2)   -> eval_setf (eval e1 env) id (eval e2 env)
     (* Constr *)
     | Constr (s, l)       -> create_const s l env
@@ -187,11 +194,7 @@ let eval_prog (prog : prog) : value * (int, heap_value) Hashtbl.t =
           struct_list;
         VPtr ptr
     | _ -> assert false
-  (* eval e.id *)
-  and eval_getf (e: expr_loc) (id: string) env : value =
-    match eval e env with
-    | VPtr a -> Hashtbl.find (find_struct a) id
-    | _ -> assert false
+  
   (* eval {a1 = e1; ... an = en; } *)
   and create_struct (s : (string * expr_loc) list) env : value =
     let data = Hashtbl.create (List.length s) in
