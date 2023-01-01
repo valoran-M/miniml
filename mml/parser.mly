@@ -209,24 +209,20 @@ types_def:
 
 (* Déclaration/fonction *)
 %inline let_expr:
-    | LET id=IDENT 
+    | LET r=boption(REC) id=IDENT 
           a=list(let_argument) 
           t=option(type_forcing) S_EQ 
           e1=expr_seq IN 
           e2=expr_seq                   
         { 
-          Let(id, mk_fun a e1, mk_fun_type a t, e2) 
+          if r then (
+            let t = mk_fun_type a t in
+            Let(id, mk_expr $sloc (Fix(id, 
+              t, mk_fun a e1)), t, e2) 
+          )else 
+            Let(id, mk_fun a e1, mk_fun_type a t, e2) 
         }
-    | LET REC id=IDENT a=list(let_argument) 
-          t=option(type_forcing) S_EQ 
-          e1=expr_seq IN 
-          e2=expr_seq                      
-        { 
-          let t = mk_fun_type a t in
-          Let(id, mk_expr $sloc (Fix(id, 
-                t, mk_fun a e1)), t, e2) 
-        }
-;
+
 let_argument:    
     | S_PAR id=IDENT t=type_forcing E_PAR   { ($sloc, id, Some t) }
     | id=IDENT                              { ($sloc, id, None) }

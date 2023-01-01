@@ -24,7 +24,7 @@ let unbound_record_field e s =
 
 let unbound_value e s =
   raise_type_error e 
-    (Printf.sprintf "Unbound value %s" s)
+    (Printf.sprintf "Unbound value %s\n" s)
 
 (* semi *)
 
