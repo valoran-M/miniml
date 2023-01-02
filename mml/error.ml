@@ -2,7 +2,7 @@
 type error =
     | Unclosed      of int * int * int * string
     | Missing_semi  of Mml.location
-    | Type_error    of Mml.expr_loc * string
+    | Type_error    of Mml.location * string
     | Type_def      of Mml.location * string
     | Invalid_argument of string
 

@@ -1,0 +1,6 @@
+
+let f x =
+  match x with 
+  | true -> x
+  | false -> x
+in f true

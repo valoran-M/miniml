@@ -17,7 +17,7 @@ type enum = string list
 type tDef = 
     | StrctDef  of (string * typ * bool 
                            * location) list
-    | ConstrDef of (string * (typ * location) list) list 
+    | AlgDef of (string * (typ * location) list) list 
                            * string option
 
 type uop = Neg | Not

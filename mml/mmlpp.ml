@@ -67,9 +67,9 @@ let rec print_types ppf = function
   | [] -> fprintf ppf "@."
   | (t, StrctDef s) :: l ->
       fprintf ppf "type %s = { @[%a}@]@.%a" t print_fields s print_types l
-  | (t, ConstrDef (e, None)) :: l ->
+  | (t, AlgDef (e, None)) :: l ->
       fprintf ppf "type %s = @[%a@]@.%a" t print_constr e print_types l
-  | (t, ConstrDef (e, Some tvar)) :: l ->
+  | (t, AlgDef (e, Some tvar)) :: l ->
       fprintf ppf "type %s %s = @[%a@]@.%a" 
         tvar t print_constr e print_types l
 

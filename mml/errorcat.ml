@@ -148,8 +148,8 @@ let print_syntax_err file lb =
   print_info file pose err_color;
   eprintf "@{<bold>@{<fg_red>Error@}@}: syntax error@."
 
-let print_type_error file e s =
-  let pose = pose_lex e.loc.fc e.loc.lc in
+let print_type_error file loc s =
+  let pose = pose_lex loc.fc loc.lc in
   print_info file pose err_color;
   eprintf "@{<bold>@{<fg_red>Error@}@}: @[%s@]@." s
 

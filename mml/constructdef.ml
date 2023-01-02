@@ -26,7 +26,7 @@ let verif_construct types =
   let f t =
     match t with
     | name, StrctDef s -> verif_struct s name
-    | name, ConstrDef (l, None) -> verif_only_tvar_type_constr name "" l
-    | name, ConstrDef (l, Some s) -> verif_only_tvar_type_constr name s l
+    | name, AlgDef (l, None) -> verif_only_tvar_type_constr name "" l
+    | name, AlgDef (l, Some s) -> verif_only_tvar_type_constr name s l
   in
   List.iter f types

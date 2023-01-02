@@ -88,25 +88,25 @@ let type_inference prog file =
 
   (* checks if two types can be unified works with constraints in the sbst
      hastable *)
-  let rec unify e t1 t2 =
+  let rec unify l t1 t2 =
     match (unfold t1, unfold t2) with
     | TInt, TInt -> ()
     | TBool, TBool -> ()
     | TUnit, TUnit -> ()
     | TDef s1, TDef s2 when s1 = s2 -> ()
     | (TParam (t1', s1) as t1), (TParam (t2', s2) as t2) when s1 = s2 -> (
-        try unify e t1' t2' with _ -> Error.type_error e t1 t2)
+      try unify l t1' t2' with _ -> Error.type_error l t1 t2)
     | TFun (t1, t1'), TFun (t2, t2') ->
-        unify e t1 t2;
-        unify e t1' t2'
+        unify l t1 t2;
+        unify l t1' t2'
     | TVar a, TVar b when a = b -> ()
-    | TArray a, TArray b -> unify e a b
+    | TArray a, TArray b -> unify l a b
     | TVar a, t | t, TVar a ->
         if occur a t then
-          Error.type_error e (unfold_full t1) (unfold_full t2)
+          Error.type_error l (unfold_full t1) (unfold_full t2)
         else
           Hashtbl.add subst a t
-    | t1, t2 -> Error.type_error e (unfold_full t1) (unfold_full t2)
+    | t1, t2 -> Error.type_error l (unfold_full t1) (unfold_full t2)
   in
 
   let instantiate s =
@@ -140,44 +140,77 @@ let type_inference prog file =
     { vars = VSet.diff fvt fvenv; typ = t }
   in
 
+  (* pattern *)
+  let rec type_pattern p =
+    match p.pat with
+    | Pat_jok -> TVar (new_var ())
+    | Pat_var _ -> TVar (new_var ())
+    | Pat_int _ -> TInt
+    | Pat_bool _ -> TBool
+    | Pat_construct (c, l) ->
+        let f (lc : (string * (typ * location) list) list) =
+          let fc (name, (types : (typ * location) list)) =
+            if c <> name then false
+            else 
+              List.for_all2 
+                (fun (t, _) (p: pattern_loc) -> unify p.loc t (type_pattern p); true) 
+                types l
+          in
+          List.exists fc lc
+        in
+        try
+          let n, opt = Iter.construct_find f types in
+          match opt with 
+          | None -> TDef n
+          | Some s ->  
+            Hashtbl.remove subst s;
+            TParam (TVar s, n)
+        with Not_found -> 
+          Error.unbound_construct p.loc c (List.map (fun p -> type_pattern p) l)
+  in
+
   let rec w (e : expr_loc) env =
     match e.expr with
     | Unit -> TUnit
     | Bool _ -> TBool
     | Uop (Not, e) ->
         let t = w e env in
-        unify e t TBool;
+        unify e.loc t TBool;
         TBool
     | Bop ((Le | Lt | Gr | Gre), e1, e2) ->
         let t1 = w e1 env in
         let t2 = w e2 env in
-        unify e1 t1 TInt;
-        unify e2 t2 TInt;
+        unify e1.loc t1 TInt;
+        unify e2.loc t2 TInt;
         TBool
     | Bop ((Equ | Nequ | Sequ | Snequ), e1, e2) ->
         let t = w e1 env in
-        unify e2 (w e2 env) t;
+        unify e2.loc (w e2 env) t;
         TBool
     | Bop ((Or | And), e1, e2) ->
         let t1 = w e1 env in
-        unify e1 t1 TBool;
+        unify e1.loc t1 TBool;
         let t2 = w e2 env in
-        unify e2 t2 TBool;
+        unify e2.loc t2 TBool;
         TBool
     | Int _ -> TInt
     | Uop (Neg, e) ->
         let t = w e env in
-        unify e t TInt;
+        unify e.loc t TInt;
         TInt
     | Bop ((Add | Sub | Mod | Mul | Div), e1, e2) ->
         let t1 = w e1 env in
         let t2 = w e2 env in
-        unify e1 t1 TInt;
-        unify e2 t2 TInt;
+        unify e1.loc t1 TInt;
+        unify e2.loc t2 TInt;
         TInt
     | Var s -> (
         try instantiate (SMap.find s env)
-        with Not_found -> Error.unbound_value e s (SMap.fold (fun s _ acc -> s ::acc) env []))
+        with Not_found ->
+          Error.unbound_value
+            e.loc
+            s
+            (SMap.fold (fun s _ acc -> s :: acc) env []))
     | Let (s, e1, None, e2) ->
         let t1 = w e1 env in
         let st1 = generalize t1 env in
@@ -185,19 +218,19 @@ let type_inference prog file =
         w e2 env'
     | Let (s, e1, Some t, e2) ->
         let t1 = w e1 env in
-        unify e1 t1 t;
+        unify e1.loc t1 t;
         let st1 = generalize t1 env in
         let env' = SMap.add s st1 env in
         w e2 env'
     | If (c, e1, Some e2) ->
-        unify e1 (w c env) TBool;
+        unify e1.loc (w c env) TBool;
         let t = w e1 env in
-        unify e2 (w e2 env) t;
+        unify e2.loc (w e2 env) t;
         t
     | If (c, e, None) ->
-        unify c (w c env) TBool;
+        unify c.loc (w c env) TBool;
         let t = w e env in
-        unify e t TUnit;
+        unify e.loc t TUnit;
         t
     | Fun (x, None, e) ->
         let v = new_var () in
@@ -225,84 +258,87 @@ let type_inference prog file =
     | SetF (e1, x, e2) -> setf_infer e e1 x e2 env
     | Array l ->
         let var = TVar (new_var ()) in
-        List.iter (fun e -> unify e (w e env) var) l;
+        List.iter (fun e -> unify e.loc (w e env) var) l;
         TArray var
     | NArray (e, n) ->
-        unify n (w n env) TInt;
+        unify n.loc (w n env) TInt;
         TArray (w e env)
     | GetI (e, i) ->
         let var = TVar (new_var ()) in
-        unify e (w e env) (TArray var);
-        unify i (w i env) TInt;
+        unify e.loc (w e env) (TArray var);
+        unify i.loc (w i env) TInt;
         var
     | SetI (e1, i, e2) ->
         let var = TVar (new_var ()) in
-        unify e1 (w e1 env) (TArray var);
-        unify i (w i env) TInt;
-        unify e2 (w e2 env) var;
+        unify e1.loc (w e1 env) (TArray var);
+        unify i.loc (w i env) TInt;
+        unify e2.loc (w e2 env) var;
         TUnit
-    | Match (_, _) -> assert false
+    | Match (e, lp) ->
+        let t = w e env in 
+        List.iter (fun ((p: pattern_loc), _) -> unify p.loc (type_pattern p) t) lp;
+        t
+
   and app_infer e e1 e2 env =
     let t = w e1 env in
     match t with
     | TFun (t1, t1') ->
         let t2 = w e2 env in
-        unify e2 t2 t1;
+        unify e2.loc t2 t1;
         t1'
     | TVar _ ->
         let t1 = w e2 env in
         let t2 = new_var () in
-        unify e t (TFun (t1, TVar t2));
+        unify e.loc t (TFun (t1, TVar t2));
         TVar t2
-    | t -> Error.not_a_function e1 t
+    | t -> Error.not_a_function e1.loc t
   (* retrieve the structure with the ids and the types so two iterations to do
      (typdef then in the defined structure)*)
   and struct_infer e l env =
     let f s =
       let iter_args (id1, e) (id2, t, _, _) =
         if id1 = id2 then
-          try
-            unify e t (w e env);
-            true
+          try unify e.loc t (w e env); true
           with _ -> false
-        else
-          false
+        else false
       in
       try List.for_all2 iter_args l s with _ -> false
     in
     try TDef (Iter.struct_find f types)
     with _ ->
-      Error.struct_construct_error e (List.map (fun (n, e) -> (n, w e env)) l)
+      Error.struct_construct_error
+        e.loc
+        (List.map (fun (n, e) -> (n, w e env)) l)
   and getf_infer e se x env =
     match w se env with
     | TDef s -> (
-        let st = get_struct_with_name se s in
+        let st = get_struct_with_name se.loc s in
         try
           let _, t, _, _ = (List.find (fun (id, _, _, _) -> id = x)) st in
           t
-        with Not_found -> Error.struct_no_field e s x)
+        with Not_found -> Error.struct_no_field e.loc s x)
     | TVar _ as t1 ->
-        let t2 = snd (get_struct_args e x) in
-        unify e t1 t2;
+        let t2 = snd (get_struct_args e.loc x) in
+        unify e.loc t1 t2;
         t2
-    | t -> Error.not_a_struct e t
+    | t -> Error.not_a_struct e.loc t
   and setf_infer e e1 x e2 env =
     match w e1 env with
     | TDef s -> (
-        let st = get_struct_with_name e s in
+        let st = get_struct_with_name e.loc s in
         try
           let _, t, m, _ = (List.find (fun (id, _, _, _) -> id = x)) st in
-          unify e2 (w e2 env) t;
+          unify e2.loc (w e2 env) t;
           if m then
             TUnit
           else
-            Error.is_not_mutable e s x
-        with Not_found -> Error.struct_no_field e s x)
+            Error.is_not_mutable e.loc s x
+        with Not_found -> Error.struct_no_field e.loc s x)
     | TVar _ as t1 ->
-        let t2 = snd (get_struct_args_mut e x) in
-        unify e t1 t2;
+        let t2 = snd (get_struct_args_mut e.loc x) in
+        unify e.loc t1 t2;
         t2
-    | t -> Error.not_a_struct e1 t
+    | t -> Error.not_a_struct e1.loc t
   and construct_infer e name l env =
     let lt2 = List.map (fun e -> (w e env, e)) l in
     let rec iter_args cname = function
@@ -310,19 +346,23 @@ let type_inference prog file =
       | (id, lt1) :: l ->
           if name = id then
             try
-              List.iter2 (fun (t1, _) (t2, loc) -> unify loc t2 t1) lt1 lt2;
+              List.iter2 (fun (t1, _) (t2, e) -> unify e.loc t2 t1) lt1 lt2;
               Some cname
             with Invalid_argument _ ->
-              Error.nb_arg_construct e id (List.length lt1) (List.length lt2)
+              Error.nb_arg_construct
+                e.loc
+                id
+                (List.length lt1)
+                (List.length lt2)
           else
             iter_args cname l
     in
     let rec aux = function
       | [] ->
           let lt2 = List.map fst lt2 in
-          Error.unbound_construct e name lt2
+          Error.unbound_construct e.loc name lt2
       | (_, StrctDef _) :: ld -> aux ld
-      | (cname, ConstrDef (a, t)) :: ld -> (
+      | (cname, AlgDef (a, t)) :: ld -> (
           match iter_args cname a with
           | Some name -> constr_match name t
           | None -> aux ld)

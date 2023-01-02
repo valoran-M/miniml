@@ -155,10 +155,10 @@ let eval_prog (prog : prog) : value * (int, heap_value) Hashtbl.t =
     | Uop (Not, e)        -> not (evalb e env)
     | Bop (Equ, e1, e2)   -> eval e1 env = eval e2 env
     | Bop (Nequ, e1, e2)  -> evali e1 env != evali e2 env
-    | Bop (Sequ, e1, e2)  -> struc_equal e  (eval e1 env) 
-                                            (eval e2 env)
-    | Bop (Snequ, e1, e2) -> not (struc_equal e (eval e1 env) 
-                                                (eval e2 env))
+    | Bop (Sequ, e1, e2)  -> struc_equal e.loc  (eval e1 env) 
+                                                (eval e2 env)
+    | Bop (Snequ, e1, e2) -> not (struc_equal e.loc (eval e1 env) 
+                                                    (eval e2 env))
     | Bop (Le, e1, e2)    -> evali e1 env <= evali e2 env
     | Bop (Lt, e1, e2)    -> evali e1 env < evali e2 env
     | Bop (Gre, e1, e2)   -> evali e1 env >= evali e2 env

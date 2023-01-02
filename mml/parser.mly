@@ -283,10 +283,10 @@ constr_types:
 %inline constr_def:
     | TYPE id=IDENT S_EQ 
         a=nonempty_list(constr_types)             
-      { (id, ConstrDef (a, None)) }
+      { (id, AlgDef (a, None)) }
     | TYPE t=T_VAR id=IDENT S_EQ 
         a=nonempty_list(constr_types)             
-      { (id, ConstrDef (a, Some t)) }
+      { (id, AlgDef (a, Some t)) }
 ;
 
 constr_param:
