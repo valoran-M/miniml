@@ -1,0 +1,2 @@
+let xs = 3  in 
+let _ = xss in ()

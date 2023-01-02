@@ -177,7 +177,7 @@ let type_inference prog file =
         TInt
     | Var s -> (
         try instantiate (SMap.find s env)
-        with Not_found -> Error.unbound_value e s)
+        with Not_found -> Error.unbound_value e s (SMap.fold (fun s _ acc -> s ::acc) env []))
     | Let (s, e1, None, e2) ->
         let t1 = w e1 env in
         let st1 = generalize t1 env in

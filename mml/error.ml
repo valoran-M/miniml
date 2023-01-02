@@ -22,12 +22,11 @@ let unbound_record_field e s =
     raise_type_error e 
       (Printf.sprintf "Unbound record field %s" s)
 
-let unbound_value e s =
+let unbound_value e s lv =
   raise_type_error e 
-    (Printf.sprintf "Unbound value %s\n" s)
+    (Printf.sprintf "Unbound value %s\n%s" s (Utils.did_you_mean s lv))
 
 (* semi *)
-
 let raise_missing_semi loc = 
   raise (Error(Missing_semi loc))
 
