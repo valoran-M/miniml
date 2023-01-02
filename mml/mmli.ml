@@ -1,8 +1,10 @@
 open Format
 
-let usage = "usage: ./mmli file.mml"
+let usage = "usage: ./mmli file.mml [-a]"
 
-let spec = []
+let adress = ref false
+
+let spec = [("-a", Arg.Set adress, "Show adress")]
 
 let file =
   let file = ref None in
@@ -27,7 +29,7 @@ let () =
     (* ignore (Typechecker.type_prog prog); *)
     ignore (Typeinference.type_inference prog file);
     let output_value, mem = Interpreter.eval_prog prog in
-    print_string (Value.value_to_string mem output_value);
+    print_string (Value.value_to_string  ~a:!adress mem output_value);
     print_newline ()
   with
   | Parser.Error ->

@@ -3,8 +3,8 @@ open Mml
 type value =
     | VInt of int
     | VBool of bool
-    | VUnit
     | VPtr of int
+    | VUnit
 
 module Env : Map.S with type key = string
 
@@ -15,4 +15,4 @@ type heap_value =
     | VArray of value array
 
 (** affiche une valeur si c'est une adresse le contenu est aussi affiché *)
-val value_to_string : (int, heap_value) Hashtbl.t -> value -> string
+val value_to_string : ?a:bool -> (int, heap_value) Hashtbl.t -> value -> string
