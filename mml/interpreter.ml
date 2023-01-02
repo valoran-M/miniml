@@ -132,7 +132,10 @@ let eval_prog (prog : prog) : value * (int, heap_value) Hashtbl.t =
     | NArray (e, n)       -> create_narray (eval e env) (evali n env)
     | GetI (e, i)         -> get_index (eval e env) (evali i env)
     | SetI (e1, i, e2)    -> set_index (eval e1 env) (evali i env) (eval e2 env)
-    | Match (_, _)        -> assert false
+    | Match (e, l)        -> 
+        let v = (eval e env) in
+        let p, e = List.find (Patern.unify_list_expr_pattern v mem) l in
+        eval e (Patern.set_env_for_expr p.pat v mem env)
 
   (* Évaluation d'une expression dont la valeur est supposée entière *)
   and evali (e : expr_loc) (env : value Env.t) : int =
