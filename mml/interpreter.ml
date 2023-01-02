@@ -132,10 +132,8 @@ let eval_prog (prog : prog) : value * (int, heap_value) Hashtbl.t =
     | NArray (e, n)       -> create_narray (eval e env) (evali n env)
     | GetI (e, i)         -> get_index (eval e env) (evali i env)
     | SetI (e1, i, e2)    -> set_index (eval e1 env) (evali i env) (eval e2 env)
-    | Match (e, l)        -> 
-        let v = (eval e env) in
-        let p, e = List.find (Patern.unify_list_expr_pattern v mem) l in
-        eval e (Patern.set_env_for_expr p.pat v mem env)
+    | Match (m, l)        -> eval_match (eval m env) l e.loc env;
+        
 
   (* Évaluation d'une expression dont la valeur est supposée entière *)
   and evali (e : expr_loc) (env : value Env.t) : int =
@@ -212,8 +210,14 @@ let eval_prog (prog : prog) : value * (int, heap_value) Hashtbl.t =
     VPtr ptr
   and create_array (l: expr_loc list) env: value=
     let ptr = new_ptr () in
-    Hashtbl.add mem ptr (VArray (Array.of_list (List.map (fun e -> eval e env) l)));
+    Hashtbl.add mem ptr 
+      (VArray (Array.of_list (List.map (fun e -> eval e env) l)));
     VPtr ptr
+  and eval_match (v: value) (l:(pattern_loc * expr_loc) list) loc env :value= 
+    try
+      let p, e = List.find (Patern.unify_list_expr_pattern v mem) l in
+      eval e (Patern.set_env_for_expr p.pat v mem env)
+    with Not_found -> Error.raise_match_failure loc mem v
   in 
 
   (eval prog.code Env.empty, mem)

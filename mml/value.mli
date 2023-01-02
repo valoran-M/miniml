@@ -14,6 +14,5 @@ type heap_value =
     | VConstr of string * value list
     | VArray of value array
 
-(** affiche une valeur si c'est une adresse 
-    le contenu est aussi affiché *)
-val print_value: (int, heap_value) Hashtbl.t -> value -> unit
+(** affiche une valeur si c'est une adresse le contenu est aussi affiché *)
+val value_to_string : (int, heap_value) Hashtbl.t -> value -> string

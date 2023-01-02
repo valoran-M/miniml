@@ -154,11 +154,17 @@ let print_type_error file loc s =
   eprintf "@{<bold>@{<fg_red>Error@}@}: @[%s@]@." s
 
 (* types def *)
-
 let print_type_constr_error file loc s =
   let pose = pose_lex loc.fc loc.lc in
   print_info file pose err_color;
   eprintf "@{<bold>@{<fg_red>Error@}@}: @[%s@]@." s
+
+(* match *)
+let print_match_failure file loc mem v = 
+  let pose = pose_lex loc.fc loc.lc in 
+  print_info file pose err_color;
+  eprintf "@{<bold>@{<fg_red>Error@}@}: match failure %s@." 
+    (Value.value_to_string mem v)
 
 let print_error err file =
   add_ansi_marking err_formatter;
@@ -167,5 +173,6 @@ let print_error err file =
   | Error.Missing_semi l -> print_missing_semi file l
   | Error.Type_error (e, s) -> print_type_error file e s
   | Error.Type_def (loc, s) -> print_type_constr_error file loc s
+  | Error.Match_failure (loc, mem, v) -> print_match_failure file loc mem v
   | _ -> ()
 

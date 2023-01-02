@@ -4,6 +4,7 @@ type error =
     | Missing_semi  of Mml.location
     | Type_error    of Mml.location * string
     | Type_def      of Mml.location * string
+    | Match_failure of Mml.location * (int, Value.heap_value) Hashtbl.t * Value.value
     | Invalid_argument of string
 
 exception Error of error
@@ -25,6 +26,10 @@ let unbound_record_field e s =
 let unbound_value e s lv =
   raise_type_error e 
     (Printf.sprintf "Unbound value %s\n%s" s (Utils.did_you_mean s lv))
+
+(* match *)
+let raise_match_failure loc mem v = 
+  raise (Error (Match_failure (loc, mem, v)))
 
 (* semi *)
 let raise_missing_semi loc = 

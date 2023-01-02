@@ -17,46 +17,36 @@ type heap_value =
     | VArray of value array
 
 (* Affiche les valeurs retourner par eval_prog *)
-let rec print_value mem = function
-  | VInt n -> Printf.printf "%d" n
-  | VBool b -> Printf.printf "%b" b
-  | VUnit -> Printf.printf "()"
-  | VPtr p ->
-      Printf.printf "@%d ->" p;
-      print_value_in_mem p mem
+let rec value_to_string mem = function
+  | VInt n -> Printf.sprintf "%d" n
+  | VBool b -> Printf.sprintf "%b" b
+  | VUnit -> Printf.sprintf "()"
+  | VPtr p -> Printf.sprintf "@%d -> %s" p (value_in_mem_to_string p mem)
 
-and print_value_in_mem p mem =
+and value_in_mem_to_string p mem =
   match Hashtbl.find mem p with
-  | VClos (s, _, _) -> Printf.printf "%s" s
+  | VClos (s, _, _) -> Printf.sprintf "%s" s
   | VStrct s -> print_struct mem s
-  | VConstr (s, v) ->
-      Printf.printf "%s (" s;
-      print_list_value mem v
+  | VConstr (s, v) -> Printf.sprintf "%s ( %s" s (list_value_to_string mem v)
   | VArray a ->
-      print_string "[|";
-      for i = 0 to Array.length a - 2 do
-        print_value mem a.(i);
-        print_string "; "
-      done;
-      print_value mem a.(Array.length a - 1);
-      print_string "|]\n"
+      Printf.sprintf
+        "[| %s |]"
+        (Array.fold_left
+           (fun acc v -> Printf.sprintf "%s; %s" acc (value_to_string mem v))
+           "" a)
 
 and print_struct mem s =
   Printf.printf "{ ";
-  Hashtbl.iter
-    (fun id v ->
-      Printf.printf "%s = " id;
-      print_value mem v;
-      Printf.printf "; ")
-    s;
-  print_char '}'
+  Hashtbl.fold
+    (fun id v s -> Printf.sprintf "%s = %s; %s" id (value_to_string mem v) s)
+    s
+    ""
 
-and print_list_value mem = function
-  | [] -> print_char ')'
-  | [ v ] ->
-      print_value mem v;
-      print_char ')'
+and list_value_to_string mem = function
+  | [] -> Printf.sprintf ")"
+  | [ v ] -> Printf.sprintf "%s)" (value_to_string mem v)
   | v :: l ->
-      print_value mem v;
-      print_string ", ";
-      print_list_value mem l
+      Printf.sprintf
+        "%s, %s"
+        (value_to_string mem v)
+        (list_value_to_string mem l)
