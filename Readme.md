@@ -36,7 +36,7 @@ Le Mini-Ml est un sous ensemble de ML, il est composé de 2 parties :
   Détermine les types des expressions et vérifie les contraintes,
   si elles ne sont pas respectées il produit une erreur.
 
-  [règle de typage](./doc/typage.txt)
+  [règle de typage](./doc/typage.md)
 
   (Utilisation de l'algo W [^1])
 
