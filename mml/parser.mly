@@ -8,6 +8,9 @@
     let mk_expr loc expr =
       {loc = mk_loc loc; expr}
 
+    let mk_pat loc pat =
+      {loc = mk_loc loc; pat}
+
     let rec mk_fun params expr = 
         match params with
         | []            -> expr
@@ -48,8 +51,10 @@
 %token T_BOOL               "bool"
 %token T_UNIT               "unit"
 %token MUTABLE              "mutable"
-
 %token <string> CONSTR      "Uid"
+(* match *)
+%token MATCH    "match"
+%token WITH     "with"
 (* Expressions booléennes *)
 %token NOT      "!"
 %token EQU      "=="
@@ -108,7 +113,7 @@
 %right    R_ARROW               (* type(t -> t -> t) *)
 %nonassoc THEN                  (* BELLOW else if ... then ... *)
 %nonassoc ELSE                  (* if ... then ... else ... *)
-
+%left     BAR
 %left     OR                    (* expr( e || e || e) *)
 %left     AND                   (* expr( e && e && e) *)
 %nonassoc NOT                   (* expr *)
@@ -169,14 +174,19 @@ app_expr:
         { mk_expr $sloc (App(e, a)) }
 
 expression:
-    | e=simple_expression                       { e }
-    | op=uop e=expression                       { mk_expr $sloc (Uop(op, e)) }
-    | e1=expression op=binop e2=expression      { mk_expr $sloc (Bop(op, e1, e2)) }
+    | e=simple_expression                       
+        { e }
+    | op=uop e=expression                       
+        { mk_expr $sloc (Uop(op, e)) }
+    | e1=expression op=binop e2=expression      
+        { mk_expr $sloc (Bop(op, e1, e2)) }
     | e=app_expr l=simple_expression
         { mk_expr $sloc (App(e, l)) }
-    | IF c=expr_seq THEN e=expression           { mk_expr $sloc (If(c, e, None)) }
+    | IF c=expr_seq THEN e=expression           
+        { mk_expr $sloc (If(c, e, None)) }
     | IF c=expr_seq THEN e1=expression 
-                    ELSE e2=expression          { mk_expr $sloc (If(c, e1, Some e2)) }
+                    ELSE e2=expression
+        { mk_expr $sloc (If(c, e1, Some e2)) }
     | FUN a=fun_argument R_ARROW e=expr_seq                
         { 
           let _, id, t = a in 
@@ -187,8 +197,11 @@ expression:
     | e1=simple_expression DOT S_PAR i=expr_seq E_PAR L_ARROW e2=expression
         { mk_expr $sloc (SetI(e1, i, e2))}
     | A_CREATE n=simple_expression e=simple_expression
-      { mk_expr $sloc (NArray(e, n)) }
-    | e=let_expr { mk_expr $sloc e }
+        { mk_expr $sloc (NArray(e, n)) }
+    | e=let_expr 
+        { mk_expr $sloc e }
+    | MATCH e=expression WITH l=nonempty_list(pattern_expr)
+        { mk_expr $sloc (Match (e, l)) }
 ;
 
 (* types *)
@@ -283,6 +296,24 @@ constr_param:
       { l }
 ;
 
+(* pattern matching *)
+pattern:
+    | n=CST 
+      { mk_pat $sloc (Pat_int n) }
+    | id=IDENT 
+      { mk_pat $sloc (if id = "_" then Pat_jok else Pat_var id)}
+    | b=BOOL
+      { mk_pat $sloc (Pat_bool b) }
+    | c=CONSTR
+      { mk_pat $sloc (Pat_construct(c, [])) }
+    | c=CONSTR S_PAR l=separated_nonempty_list(COMMA, pattern) E_PAR
+      { mk_pat $sloc (Pat_construct(c, l)) }
+;
+%inline pattern_expr:
+    | BAR p=pattern R_ARROW e=expr_seq
+      { (p, e) }
+;
+
 (* Opération *)
 %inline uop:
     | MINUS { Neg }
@@ -301,5 +332,3 @@ constr_param:
     | GRE   { Gre}  | GR    { Gr }
     | OR    { Or }  | AND   { And }
 ;
-
-

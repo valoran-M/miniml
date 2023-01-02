@@ -34,6 +34,18 @@ type bop =
     | Gre   | Gr
     | Or    | And
 
+type pattern =
+    | Pat_jok
+    | Pat_var       of string
+    | Pat_int       of int
+    | Pat_bool      of bool
+    | Pat_construct of string * pattern_loc list
+
+and pattern_loc = 
+  { loc : location
+  ; pat: pattern}
+
+
 type expr =
     | Int       of int
     | Bool      of bool
@@ -55,11 +67,14 @@ type expr =
     | Constr    of string * expr_loc list
     | Array     of expr_loc list
     | NArray    of expr_loc * expr_loc
-    
+    | Match     of expr_loc * (pattern_loc * expr_loc) list
 
 and expr_loc =
   { loc : location
   ; expr: expr}
+
+
+
 
 type prog = 
   {types : (string * tDef) list

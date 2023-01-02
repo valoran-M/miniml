@@ -1,0 +1,13 @@
+type 'a list = 
+  | Cons of 'a * 'a list 
+  | Nil
+
+let rev l =
+  let rec aux l acc = 
+    match l with 
+    | Nil -> acc
+    | Cons (x, l) -> aux l (Cons(x, acc))
+  in 
+  aux l Nil
+in 
+rev (Cons(2, Cons(1, Nil)))

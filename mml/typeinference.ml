@@ -241,6 +241,7 @@ let type_inference prog file =
         unify i (w i env) TInt;
         unify e2 (w e2 env) var;
         TUnit
+    | Match (_, _) -> assert false
   and app_infer e e1 e2 env =
     let t = w e1 env in
     match t with

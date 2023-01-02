@@ -4,7 +4,7 @@
     open Parser
 
     (* hashtable avec tous les mots clefs *)
-    let keyword_table = Hashtbl.create 16
+    let keyword_table = Hashtbl.create 19
     let () =
         List.iter (fun (x, y) -> Hashtbl.add keyword_table x y )         
             [
@@ -17,6 +17,9 @@
                 "if", IF;
                 "then", THEN;
                 "else", ELSE;
+                (* match *)
+                "match", MATCH;
+                "with", WITH;
                 (* function *)
                 "let", LET;
                 "fun", FUN;
@@ -113,5 +116,6 @@ rule pattern = parse
 and comment = parse
     | "*)"  { end_comment () }
     | "(*"  { comment lexbuf; comment lexbuf }
+    | ['\n']{ new_line lexbuf; comment lexbuf }
     | _     { comment lexbuf }
     | eof   { Error.raise_unclosed (!l) "unterminated comment" }
