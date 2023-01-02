@@ -95,7 +95,7 @@ let type_inference prog file =
     | TUnit, TUnit -> ()
     | TDef s1, TDef s2 when s1 = s2 -> ()
     | (TParam (t1', s1) as t1), (TParam (t2', s2) as t2) when s1 = s2 -> (
-      try unify l t1' t2' with _ -> Error.type_error l t1 t2)
+        try unify l t1' t2' with _ -> Error.type_error l t1 t2)
     | TFun (t1, t1'), TFun (t2, t2') ->
         unify l t1 t2;
         unify l t1' t2'
@@ -141,32 +141,42 @@ let type_inference prog file =
   in
 
   (* pattern *)
-  let rec type_pattern p =
+
+  (* return type pattern with env*)
+  let rec type_pattern p env =
     match p.pat with
-    | Pat_jok -> TVar (new_var ())
-    | Pat_var _ -> TVar (new_var ())
-    | Pat_int _ -> TInt
-    | Pat_bool _ -> TBool
-    | Pat_construct (c, l) ->
-        let f (lc : (string * (typ * location) list) list) =
-          let fc (name, (types : (typ * location) list)) =
-            if c <> name then false
-            else 
-              List.for_all2 
-                (fun (t, _) (p: pattern_loc) -> unify p.loc t (type_pattern p); true) 
-                types l
+    | Pat_jok -> (TVar (new_var ()), env)
+    | Pat_var x -> 
+        let v = new_var () in
+        let env = SMap.add x { vars = VSet.empty; typ = TVar v } env in
+        (TVar (new_var ()), env)
+    | Pat_int _ -> (TInt, env)
+    | Pat_bool _ -> (TBool, env)
+    | Pat_construct (c, l) -> (
+        let f name (lc : (string * (typ * location) list) list)
+            (s : string option) env =
+          let fc (name, (types : (typ * location) list)) env =
+            if c <> name then
+              false, env
+            else
+              (true, List.fold_left2
+                (fun env (t, _) (p : pattern_loc) ->
+                  let tp, env = type_pattern p env in
+                  unify p.loc t tp; env) 
+                env types l)
           in
-          List.exists fc lc
+          let b, env = Iter.list_find_ret fc lc env in
+          (b, (name, s, env))
         in
         try
-          let n, opt = Iter.construct_find f types in
-          match opt with 
-          | None -> TDef n
-          | Some s ->  
-            Hashtbl.remove subst s;
-            TParam (TVar s, n)
-        with Not_found -> 
-          Error.unbound_construct p.loc c (List.map (fun p -> type_pattern p) l)
+          let n, opt, env = Iter.construct_find_ret f types env in
+          match opt with
+          | None -> (TDef n, env)
+          | Some s ->
+              let t = unfold_full (TVar s) in
+              Hashtbl.remove subst s;
+              (TParam (t, n), env)
+        with Not_found -> Error.unbound_construct p.loc c [])
   in
 
   let rec w (e : expr_loc) env =
@@ -208,9 +218,7 @@ let type_inference prog file =
         try instantiate (SMap.find s env)
         with Not_found ->
           Error.unbound_value
-            e.loc
-            s
-            (SMap.fold (fun s _ acc -> s :: acc) env []))
+            e.loc s (SMap.fold (fun s _ acc -> s :: acc) env []))
     | Let (s, e1, None, e2) ->
         let t1 = w e1 env in
         let st1 = generalize t1 env in
@@ -275,10 +283,15 @@ let type_inference prog file =
         unify e2.loc (w e2 env) var;
         TUnit
     | Match (e, lp) ->
-        let t = w e env in 
-        List.iter (fun ((p: pattern_loc), _) -> unify p.loc (type_pattern p) t) lp;
-        t
-
+        let t = w e env in
+        let tm = TVar (new_var ()) in
+        List.iter
+          (fun ((p : pattern_loc), e) ->
+            let tp, env = type_pattern p env in
+            unify p.loc tp t;
+            unify e.loc tm (w e env))
+          lp;
+        unfold tm
   and app_infer e e1 e2 env =
     let t = w e1 env in
     match t with
@@ -298,9 +311,12 @@ let type_inference prog file =
     let f s =
       let iter_args (id1, e) (id2, t, _, _) =
         if id1 = id2 then
-          try unify e.loc t (w e env); true
+          try
+            unify e.loc t (w e env);
+            true
           with _ -> false
-        else false
+        else
+          false
       in
       try List.for_all2 iter_args l s with _ -> false
     in

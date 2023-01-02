@@ -1,6 +1,6 @@
 
 let f x =
   match x with 
-  | true -> x
-  | false -> x
+  | true -> true
+  | false -> 2
 in f true
