@@ -142,7 +142,7 @@ let type_inference prog file =
 
   (* pattern *)
 
-  (* return type pattern with env*)
+  (* return type pattern with env *)
   let rec type_pattern p env =
     match p.pat with
     | Pat_jok -> (TVar (new_var ()), env)
