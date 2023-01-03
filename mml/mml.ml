@@ -5,6 +5,8 @@ type location =
 type typ =
     | TInt
     | TBool
+    | TChar
+    | TString
     | TUnit
     | TVar    of string
     | TFun    of typ * typ
@@ -45,10 +47,17 @@ and pattern_loc =
   { loc : location
   ; pat: pattern}
 
+type typ_print = 
+  | Pt_int | Pt_bool 
+  | Pt_newline
+  | Pt_char
+  | Pt_string | Pt_endline
 
 type expr =
     | Int       of int
     | Bool      of bool
+    | Char      of char
+    | String    of string
     | Unit
     | Uop       of uop * expr_loc
     | Bop       of bop * expr_loc * expr_loc
@@ -68,6 +77,7 @@ type expr =
     | Array     of expr_loc list
     | NArray    of expr_loc * expr_loc
     | Match     of expr_loc * (pattern_loc * expr_loc) list
+    | Print     of typ_print * expr_loc
 
 and expr_loc =
   { loc : location

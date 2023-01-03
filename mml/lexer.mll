@@ -4,7 +4,7 @@
     open Parser
 
     (* hashtable avec tous les mots clefs *)
-    let keyword_table = Hashtbl.create 19
+    let keyword_table = Hashtbl.create 22
     let () =
         List.iter (fun (x, y) -> Hashtbl.add keyword_table x y )         
             [
@@ -31,18 +31,37 @@
                 "unit", T_UNIT;
                 "type", TYPE;
                 "mutable", MUTABLE;
-                "of", OF
+                "of", OF;
+                
             ]
 
     let is_keyword name = Hashtbl.mem keyword_table name
 
+    let id_to_lexem = function
+      | "print_int" -> PRINT_INT
+      | "print_bool" -> PRINT_BOOL
+      | "print_newline" -> PRINT_NEWLINE
+      | "print_char" -> PRINT_CHAR
+      | "print_string" -> PRINT_STRING
+      | "print_endline" -> PRINT_ENDLINE
+      | s -> IDENT(s)
+
+    let string_buffer = Buffer.create 256
+    let reset_stored_string () = Buffer.reset string_buffer
+    let get_stored_string () = Buffer.contents string_buffer
+    let store_string_char c = Buffer.add_char string_buffer c
+
     let l = ref []
 
     let begin_comment lexbuf =
-      let start = lexbuf.lex_start_p.pos_cnum - lexbuf.lex_start_p.pos_bol + 1 in
+      let start = lexbuf.lex_start_p.pos_cnum - lexbuf.lex_start_p.pos_bol in
       l := (lexbuf.lex_start_p.pos_lnum, start, start + 2) :: !l
+    
+    let begin_string lexbuf = 
+      let start = lexbuf.lex_start_p.pos_cnum - lexbuf.lex_start_p.pos_bol in
+      l := (lexbuf.lex_start_p.pos_lnum, start, start + 1) :: !l
 
-    let end_comment () =
+    let end_bloc () =
       match !l with 
       | [] -> assert false
       | _::ls -> l := ls 
@@ -76,9 +95,26 @@ rule pattern = parse
             else
                 IDENT(name)
         }
-    | ident as name     { IDENT(name) }
+    | ident as name     { id_to_lexem name }
     | tvar  as var      { T_VAR(var) } 
     | "Array.make"      { A_CREATE }
+    | '\"'
+      { 
+        begin_string lexbuf;
+        string lexbuf;
+        let s  = get_stored_string () in
+        reset_stored_string ();
+        STRING(s)
+      }
+    (* char *)
+    | "'\n'"
+      { new_line lexbuf; CHAR('\n')}
+    | "'\\" (['\\' '\'' '\"'] as c) "'"
+      { CHAR(c) }
+    | "'\\n'" { CHAR('\n') }
+    | "'\\t'" { CHAR('\t') }
+    | "'\\r'" { CHAR('\r') }
+    | "'" (_ as c) "'"  { CHAR(c) }
     (* symboles *)
     | "="       { S_EQ }
     | "->"      { R_ARROW }
@@ -114,8 +150,26 @@ rule pattern = parse
     | eof       { EOF }
 
 and comment = parse
-    | "*)"  { end_comment () }
-    | "(*"  { comment lexbuf; comment lexbuf }
+    | "*)"  { end_bloc () }
+    | "(*"  { begin_comment lexbuf; comment lexbuf; comment lexbuf }
     | ['\n']{ new_line lexbuf; comment lexbuf }
     | _     { comment lexbuf }
     | eof   { Error.raise_unclosed (!l) "unterminated comment" }
+
+and string = parse 
+    | '\\' (['\\' '\'' '\"'] as c )
+        { store_string_char c; string lexbuf }
+    | "\\n"
+        { store_string_char '\n'; string lexbuf }
+    | "\\t"
+        { store_string_char '\t'; string lexbuf }
+    | "\\r"
+        { store_string_char '\r'; string lexbuf }
+    | '\"'
+        { end_bloc () }
+    | "\n"
+        { Error.raise_unclosed (!l) "unterminated string" }
+    | eof 
+        { Error.raise_unclosed (!l) "unterminated string" }
+    | _ as c 
+        { store_string_char c; string lexbuf}

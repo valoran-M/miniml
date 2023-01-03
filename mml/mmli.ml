@@ -27,9 +27,11 @@ let () =
     let prog = Parser.program Lexer.pattern lb in
     close_in c;
     (* ignore (Typechecker.type_prog prog); *)
-    ignore (Typeinference.type_inference prog file);
+    let typ = Typeinference.type_inference prog file in
     let output_value, mem = Interpreter.eval_prog prog in
-    print_string (Value.value_to_string  ~a:!adress mem output_value);
+    Printf.printf "- : %s = %s" 
+      (Mmlpp.typ_to_string typ)
+      (Value.value_to_string  ~a:!adress ~q:true mem output_value);
     print_newline ()
   with
   | Parser.Error ->

@@ -47,7 +47,8 @@ let eval_prog (prog : prog) : value * (int, heap_value) Hashtbl.t =
     match Hashtbl.find mem ptr with
     | VArray a ->(
         try a.(i) <- (v2); VUnit
-        with Invalid_argument s -> raise (Error.Error (Error.Invalid_argument s)))
+        with Invalid_argument s -> 
+          raise (Error.Error (Error.Invalid_argument s)))
     | _ -> assert false
   in
 
@@ -81,7 +82,8 @@ let eval_prog (prog : prog) : value * (int, heap_value) Hashtbl.t =
     match Hashtbl.find mem ptr with
     | VArray a ->(
         try a.(i)
-        with Invalid_argument s -> raise (Error.Error (Error.Invalid_argument s)))
+        with Invalid_argument s -> 
+          raise (Error.Error (Error.Invalid_argument s)))
     | _ -> assert false
   in
 
@@ -91,12 +93,23 @@ let eval_prog (prog : prog) : value * (int, heap_value) Hashtbl.t =
     VPtr ptr
   in
 
+  let eval_print t v = 
+    match t with 
+    | Pt_int | Pt_bool -> print_string (Value.value_to_string mem v)
+    | Pt_char          -> print_string(Value.value_to_string mem v)
+    | Pt_string        -> print_string (Value.value_to_string mem v) 
+    | Pt_endline       -> print_endline (Value.value_to_string mem v)
+    | Pt_newline       -> print_newline ();
+  in
+
   (* Interprétation d'une expression, en fonction d'un environnement
       et de la mémoire globale *)
   let rec eval (e : expr_loc) (env : value Env.t) : value =
     match e.expr with
     | Unit            -> VUnit
     | Var id          -> Env.find id env
+    | Char c          -> VChar c
+    | String s        -> VString s
     (* Opération Booléenne *)
     | Bool b          -> VBool b
     | (Uop (Not, _) 
@@ -133,6 +146,7 @@ let eval_prog (prog : prog) : value * (int, heap_value) Hashtbl.t =
     | GetI (e, i)         -> get_index (eval e env) (evali i env)
     | SetI (e1, i, e2)    -> set_index (eval e1 env) (evali i env) (eval e2 env)
     | Match (m, l)        -> eval_match (eval m env) l e.loc env;
+    | Print (t, e)        -> eval_print t (eval e env); VUnit
         
 
   (* Évaluation d'une expression dont la valeur est supposée entière *)

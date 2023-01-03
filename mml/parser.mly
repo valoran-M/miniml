@@ -21,7 +21,7 @@
       Error.raise_unclosed [(fc.pos_lnum, fc.pos_cnum - fc.pos_bol, 
                                             lc.pos_cnum - lc.pos_bol)] s
 
-    let mk_fun_type xs t = 
+    let mk_fun_type xs t =
       match t with
       | None -> None
       | Some t -> 
@@ -44,6 +44,8 @@
 %token <string> IDENT       "x"
 %token <bool> BOOL          "b"
 %token <int> CST            "n"
+%token <char> CHAR          "'c'"
+%token <string> STRING      "\"exemple\""
 %token UNIT                 "()"
 (* Types *)
 %token <string>T_VAR        "'a"
@@ -99,6 +101,12 @@
 %token COMMA          ","
 %token EOF            ""
 %token TYPE           "type"
+%token PRINT_INT      "print_int"
+%token PRINT_BOOL     "print_bool"
+%token PRINT_CHAR     "print_char"
+%token PRINT_STRING   "print_string"
+%token PRINT_ENDLINE  "print_endline"
+%token PRINT_NEWLINE  "print_newline"
 
 %start program
 %type <Mml.prog> program
@@ -141,6 +149,8 @@ program:
 simple_expression:
     | n=CST       { mk_expr $sloc (Int n) }
     | b=BOOL      { mk_expr $sloc (Bool b) }
+    | c=CHAR      { mk_expr $sloc (Char c)}
+    | s=STRING    { mk_expr $sloc (String(s)) }
     | UNIT        { mk_expr $sloc Unit }
     | id=IDENT    { mk_expr $sloc (Var (id)) }
     | S_PAR e=expr_seq E_PAR                        
@@ -161,6 +171,7 @@ simple_expression:
       { unclosed_error ($loc($1)) "\"[|\"" "\" |]\""  }
     | id=CONSTR l=constr_param  
       { mk_expr $sloc (Constr (id, l)) }
+    
 ;
 
 expr_seq:
@@ -202,6 +213,8 @@ expression:
         { mk_expr $sloc e }
     | MATCH e=expression WITH l=nonempty_list(pattern_expr)
         { mk_expr $sloc (Match (e, l)) }
+    | p=print_type e=simple_expression 
+        { mk_expr $sloc (Print(p, e)) }
 ;
 
 (* types *)
@@ -332,3 +345,12 @@ pattern:
     | GRE   { Gre}  | GR    { Gr }
     | OR    { Or }  | AND   { And }
 ;
+
+(* print *)
+%inline print_type:
+  | PRINT_INT     { Pt_int }
+  | PRINT_BOOL    { Pt_bool}
+  | PRINT_CHAR    { Pt_char }
+  | PRINT_STRING  { Pt_string }
+  | PRINT_ENDLINE { Pt_endline }
+  | PRINT_NEWLINE { Pt_newline }

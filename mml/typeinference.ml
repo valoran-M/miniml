@@ -92,6 +92,8 @@ let type_inference prog file =
     match (unfold t1, unfold t2) with
     | TInt, TInt -> ()
     | TBool, TBool -> ()
+    | TChar, TChar -> ()
+    | TString, TString -> ()
     | TUnit, TUnit -> ()
     | TDef s1, TDef s2 when s1 = s2 -> ()
     | (TParam (t1', s1) as t1), (TParam (t2', s2) as t2) when s1 = s2 -> (
@@ -183,6 +185,8 @@ let type_inference prog file =
     match e.expr with
     | Unit -> TUnit
     | Bool _ -> TBool
+    | Char _ -> TChar
+    | String _ -> TString
     | Uop (Not, e) ->
         let t = w e env in
         unify e.loc t TBool;
@@ -292,6 +296,7 @@ let type_inference prog file =
             unify e.loc tm (w e env))
           lp;
         unfold tm
+    | Print (t, e) -> check_print t e env
   and app_infer e e1 e2 env =
     let t = w e1 env in
     match t with
@@ -390,6 +395,15 @@ let type_inference prog file =
       | None -> TDef name
     in
     aux types
+  and check_print t e env = 
+    (match t with 
+    | Pt_int      -> unify e.loc TInt (w e env)
+    | Pt_bool     -> unify e.loc TBool (w e env)
+    | Pt_newline  -> unify e.loc TUnit (w e env)
+    | Pt_char     -> unify e.loc TChar (w e env)
+    | Pt_string   
+    | Pt_endline  -> unify e.loc TString (w e env));
+    TUnit
   in
 
   Constructdef.verif_construct prog.types;

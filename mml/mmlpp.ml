@@ -21,6 +21,8 @@ let new_type_var =
 let rec typ_to_string = function
   | TInt -> "int"
   | TBool -> "bool"
+  | TChar -> "char"
+  | TString -> "string"
   | TUnit -> "unit"
   | TVar s -> 
     if Hashtbl.mem mem_var s then
@@ -87,9 +89,19 @@ let bop_to_string = function
   | Gr    -> ">"  | Gre   -> ">="
   | And   -> "&&" | Or    -> "||"
 
+let typ_print_to_string = function
+  | Pt_int      -> "print_int"
+  | Pt_bool     -> "print_bool"
+  | Pt_newline  -> "print_newline"
+  | Pt_char     -> "print_char"
+  | Pt_string   -> "print_string"
+  | Pt_endline  -> "print_endline"
+
 let rec print_expr ppf = function
   | Int n -> fprintf ppf "%i" n
   | Bool b -> fprintf ppf "%b" b
+  | Char c -> fprintf ppf "'%c'" c
+  | String s -> fprintf ppf "%s" s
   | Unit -> fprintf ppf "()"
   | Var x -> fprintf ppf "%s" x
   | Fun (x, Some t, e) ->
@@ -136,6 +148,7 @@ let rec print_expr ppf = function
   | Match (e, l) -> 
       fprintf ppf "@[match %a with@ @[%a @]" 
         print_expr e.expr print_pat_expr l
+  | Print (t, e) -> fprintf ppf "(%s %a)" (typ_print_to_string t) print_expr e.expr
 
 and print_list_expr ppf = function
   | [] -> ()  

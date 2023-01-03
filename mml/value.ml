@@ -1,9 +1,11 @@
 open Mml
 
 type value =
-    | VInt  of int
-    | VBool of bool
-    | VPtr  of int
+    | VInt    of int
+    | VBool   of bool
+    | VChar   of char
+    | VString of string
+    | VPtr    of int
     | VUnit
 
 (* Environnement : associe des valeurs à des noms de variables *)
@@ -17,13 +19,17 @@ type heap_value =
     | VArray  of value array
 
 (* Affiche les valeurs retourner par eval_prog *)
-let rec value_to_string ?a:(a = false) mem = function
-  | VInt n        -> Printf.sprintf "%d" n
-  | VBool b       -> Printf.sprintf "%b" b
-  | VUnit         -> Printf.sprintf "()"
-  | VPtr p when a -> 
+let rec value_to_string ?a:(a = false) ?q:(q = false) mem = function
+  | VInt n            -> string_of_int n
+  | VBool b           -> string_of_bool b
+  | VChar c when q    -> Printf.sprintf "'%c'" c
+  | VChar c           -> Printf.sprintf "%c" c
+  | VString s when q  -> Printf.sprintf "\"%s\"" s
+  | VString s         -> s
+  | VUnit             -> Printf.sprintf "()"
+  | VPtr p when a     -> 
       Printf.sprintf "@%d -> %s" p (value_in_mem_to_string a p mem)
-  | VPtr p        -> Printf.sprintf "%s" (value_in_mem_to_string a p mem)
+  | VPtr p            -> Printf.sprintf "%s" (value_in_mem_to_string a p mem)
 
 and value_in_mem_to_string a p mem =
   match Hashtbl.find mem p with
