@@ -66,6 +66,7 @@ Les expressions sont les suivantes :
 - `false` : un booléen faux
 - `'c'` : un charactère 
 - `"..."` : une chaine de charactère
+- `s.[i]` : récupère le i ème charactère de la chaine de charactère s 
 - `()` : l'unité
 - `e1 ~ e2` : Les expression binaires
     - ~ est un opérateur binaire parmis `+`, `-`, `*`, `/`, `mod`, `==`, `!=`, `<`, `<=`, `>`, '>=', `&&`, `||`

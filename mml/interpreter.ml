@@ -95,6 +95,15 @@ let eval_prog (prog : prog) : value * (int, heap_value) Hashtbl.t =
     VPtr ptr
   in
 
+  let get_char_string (v: value) (i: int): value = 
+    match v with
+    | VString s ->(
+        try VChar s.[i]
+        with Invalid_argument s -> 
+          raise (Error.Error (Error.Invalid_argument s)))
+    | _ -> assert false
+  in
+
   let eval_print t v = 
     match t with 
     | Pt_int | Pt_bool -> print_string (Value.value_to_string mem v)
@@ -110,8 +119,10 @@ let eval_prog (prog : prog) : value * (int, heap_value) Hashtbl.t =
     match e.expr with
     | Unit            -> VUnit
     | Var id          -> Env.find id env
+    (* char string *)
     | Char c          -> VChar c
     | String s        -> VString s
+    | GetS (e, i)     -> get_char_string (eval e env) (evali i env)
     (* Opération Booléenne *)
     | Bool b          -> VBool b
     | (Uop (Not, _) 

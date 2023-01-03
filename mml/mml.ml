@@ -48,7 +48,7 @@ and pattern_loc =
   ; pat: pattern}
 
 type typ_print = 
-  | Pt_int | Pt_bool 
+  | Pt_int    | Pt_bool 
   | Pt_newline
   | Pt_char
   | Pt_string | Pt_endline
@@ -72,6 +72,7 @@ type expr =
     | SetF      of expr_loc * string * expr_loc
     | GetI      of expr_loc * expr_loc
     | SetI      of expr_loc * expr_loc * expr_loc
+    | GetS      of expr_loc * expr_loc
     | Seq       of expr_loc * expr_loc
     | Constr    of string * expr_loc list
     | Array     of expr_loc list

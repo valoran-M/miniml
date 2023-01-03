@@ -145,6 +145,7 @@ let rec print_expr ppf = function
   | SetI (e1, i, e2) -> 
       fprintf ppf "%a.(%a) <- %a" 
         print_expr e1.expr print_expr i.expr print_expr e2.expr
+  | GetS (e, i) -> fprintf ppf "%a.[%a]" print_expr e.expr print_expr i.expr
   | Match (e, l) -> 
       fprintf ppf "@[match %a with@ @[%a @]" 
         print_expr e.expr print_pat_expr l

@@ -187,6 +187,10 @@ let type_inference prog file =
     | Bool _ -> TBool
     | Char _ -> TChar
     | String _ -> TString
+    | GetS (e, i) -> 
+        unify e.loc (w e env) TString;
+        unify i.loc (w i env) TInt;
+        TChar
     | Uop (Not, e) ->
         let t = w e env in
         unify e.loc t TBool;

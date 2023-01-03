@@ -147,6 +147,8 @@ rule pattern = parse
     | "}"       { E_BRACE }
     | "[|"      { S_BRACKETBAR }
     | "|]"      { E_BRACKETBAR }
+    | "["       { S_BRACKET }
+    | "]"       { E_BRACKET }
     | eof       { EOF }
 
 and comment = parse

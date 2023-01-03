@@ -91,6 +91,8 @@
 %token E_BRACE        "}"
 %token S_BRACKETBAR   "[|"
 %token E_BRACKETBAR   "|]"
+%token S_BRACKET      "["
+%token E_BRACKET      "]"
 %token A_CREATE       "Array.create"
 %token LET            "let"
 %token FUN            "fun"
@@ -161,6 +163,8 @@ simple_expression:
       { mk_expr $sloc (GetF (e, id)) }
     | e=simple_expression DOT S_PAR i=expr_seq E_PAR 
       { mk_expr $sloc (GetI(e, i)) }
+    | e=simple_expression DOT S_BRACKET i=expr_seq E_BRACKET
+      { mk_expr $sloc (GetS(e, i)) }
     | S_BRACE a=nonempty_list(body_struct) E_BRACE  
       { mk_expr $sloc (Strct a) }
     | S_BRACE nonempty_list(body_struct) error
