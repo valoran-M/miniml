@@ -46,9 +46,11 @@ les types sont les suivants :
 
 ### Bases:
 
-- `int` : les entiers
-- `bool` : les booléens
-- `unit` : l'unité
+- `int`   : les entiers
+- `bool`  : les booléens
+- `char`  : les charactères
+- `string`: les chaines de charactères
+- `unit`  : l'unité
 
 ### Utilisateur 
 - `type s = {id1 = e1; ...; idn = en;}` : Structures
@@ -62,6 +64,8 @@ Les expressions sont les suivantes :
 - `n` : un entier
 - `true` : un booléen vrai
 - `false` : un booléen faux
+- `'c'` : un charactère 
+- `"..."` : une chaine de charactère
 - `()` : l'unité
 - `e1 ~ e2` : Les expression binaires
     - ~ est un opérateur binaire parmis `+`, `-`, `*`, `/`, `mod`, `==`, `!=`, `<`, `<=`, `>`, '>=', `&&`, `||`
@@ -83,6 +87,17 @@ Les expressions sont les suivantes :
 - `t.(i) <- e` : chnage la valeur de la case i du tableau t en la valeur de e 
 - `Enum` : Construction d'une variable enum
 - `Constr(e1, ...)`: Construction d'une variable algébrique
+
+## Affichage 
+
+On peut affiches les valeur avec :
+
+- `print_int n`
+- `print_book b`
+- `print_char c`
+- `print_string s`
+- `print_endline s`
+- `print_newline ()`
 
 # Exemple
 
