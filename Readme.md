@@ -87,6 +87,19 @@ Les expressions sont les suivantes :
 - `t.(i) <- e` : chnage la valeur de la case i du tableau t en la valeur de e 
 - `Enum` : Construction d'une variable enum
 - `Constr(e1, ...)`: Construction d'une variable algébrique
+- `match e with | p1 -> e1 ... | pn -> en` : pattern matching sur e avec les pattern pi
+
+## Pattern 
+
+```
+pattern := 
+  | Jok
+  | Var         of string
+  | Int         of int
+  | Bool        of true
+  | Construct   of (string, pattern list)
+
+```
 
 ## Affichage 
 

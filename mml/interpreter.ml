@@ -26,6 +26,8 @@ let eval_prog (prog : prog) : value * (int, heap_value) Hashtbl.t =
     match v1, v2 with
     | VInt  v1  , VInt  v2  -> v1 = v2
     | VBool b1  , VBool b2  -> b1 = b2
+    | VChar c1  , VChar c2  -> c1 = c2
+    | VString s1, VString s2-> s1 = s2
     | VPtr  pt1 , VPtr  pt2 -> (
         match (Hashtbl.find mem pt1, Hashtbl.find mem pt2) with 
         | VClos _, _ | _, VClos _ -> 
