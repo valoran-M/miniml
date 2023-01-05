@@ -154,7 +154,7 @@ rule pattern = parse
     | "|]"      { E_BRACKETBAR }
     | "["       { S_BRACKET }
     | "]"       { E_BRACKET }
-    | _         { Error.raise_unknown_char (char_pos lexbuf) (lexeme lexbuf) }
+    | _         { Error.raise_unknow_char (char_pos lexbuf) (lexeme lexbuf) }
     | eof       { EOF }
 
 and comment = parse
