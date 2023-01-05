@@ -25,6 +25,7 @@ type tDef =
 type uop = Neg | Not
 
 type bop =
+    | Concat
     (* opérations arithmétiques *)
     | Add   | Sub
     | Mod

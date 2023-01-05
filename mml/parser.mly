@@ -57,6 +57,8 @@
 (* match *)
 %token MATCH    "match"
 %token WITH     "with"
+
+%token CONCAT   "^"
 (* Expressions booléennes *)
 %token NOT      "!"
 %token EQU      "=="
@@ -131,7 +133,7 @@
 %left     EQU NEQU DIFF S_EQ    (* expr( e == e == e) *)
 %left     LT LE GR GRE          (* expr( e < e < e) *)
 
-%left     PLUS MINUS            (* expr( e + e + e) *)
+%left     PLUS MINUS CONCAT     (* expr( e + e + e) *)
 %left     MOD                   (* expr( e mod e mod e) *)
 %left     STAR DIV              (* expr( e * e * e) *)
 
@@ -338,6 +340,7 @@ pattern:
 ;
 
 %inline binop:
+    | CONCAT {Concat}
     (* Opérations Arithmétiques *)
     | PLUS  { Add } | MINUS { Sub }
     | MOD   { Mod}

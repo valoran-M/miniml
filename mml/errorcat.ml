@@ -135,6 +135,10 @@ let warn_not_unit file e =
 
 (* Error *)
 
+let print_unkow_char file l c s =
+  print_info file (l, l, c, c + 1) err_color;
+  eprintf "@{<bold>@{<fg_red>Error@}@}: unknown character '%s'@." s
+
 let print_missing_semi file l =
   print_info file (pose_lex l.fc l.lc) err_color;
   eprintf "@{<bold>@<fg_red>Error@}: Missing semicolon@."
@@ -169,6 +173,7 @@ let print_match_failure file loc mem v =
 let print_error err file =
   add_ansi_marking err_formatter;
   match err with
+  | Error.Unknow_char (c, l, s) -> print_unkow_char file l c s
   | Error.Unclosed (l, fc, lc, s) -> print_unclosed_error file l fc lc s
   | Error.Missing_semi l -> print_missing_semi file l
   | Error.Type_error (e, s) -> print_type_error file e s

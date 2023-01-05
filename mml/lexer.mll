@@ -56,6 +56,10 @@
     let begin_comment lexbuf =
       let start = lexbuf.lex_start_p.pos_cnum - lexbuf.lex_start_p.pos_bol in
       l := (lexbuf.lex_start_p.pos_lnum, start, start + 2) :: !l
+
+    let char_pos lexbuf =
+      (lexbuf.lex_start_p.pos_cnum - lexbuf.lex_start_p.pos_bol, 
+        lexbuf.lex_start_p.pos_lnum)
     
     let begin_string lexbuf = 
       let start = lexbuf.lex_start_p.pos_cnum - lexbuf.lex_start_p.pos_bol in
@@ -124,6 +128,7 @@ rule pattern = parse
     | ","       { COMMA }
     | "."       { DOT }
     | "|"       { BAR }
+    | "^"       { CONCAT }
     (* opérations booléennes *)
     | "=="      { EQU }
     | "!="      { NEQU }
@@ -149,6 +154,7 @@ rule pattern = parse
     | "|]"      { E_BRACKETBAR }
     | "["       { S_BRACKET }
     | "]"       { E_BRACKET }
+    | _         { Error.raise_unknow_char (char_pos lexbuf) (lexeme lexbuf) }
     | eof       { EOF }
 
 and comment = parse

@@ -104,6 +104,12 @@ let eval_prog (prog : prog) : value * (int, heap_value) Hashtbl.t =
     | _ -> assert false
   in
 
+  let concat_string (v1: value) (v2: value): value = 
+    match v1, v2 with 
+    | VString s1, VString s2 -> VString (s1 ^ s2)
+    | _, _ -> assert false
+  in
+
   let eval_print t v = 
     match t with 
     | Pt_int | Pt_bool -> print_string (Value.value_to_string mem v)
@@ -123,6 +129,8 @@ let eval_prog (prog : prog) : value * (int, heap_value) Hashtbl.t =
     | Char c          -> VChar c
     | String s        -> VString s
     | GetS (e, i)     -> get_char_string (eval e env) (evali i env)
+    | Bop (Concat, 
+          e1, e2)     -> concat_string (eval e1 env) (eval e2 env)
     (* Opération Booléenne *)
     | Bool b          -> VBool b
     | (Uop (Not, _) 

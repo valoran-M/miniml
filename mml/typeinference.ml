@@ -195,6 +195,10 @@ let type_inference prog file =
         let t = w e env in
         unify e.loc t TBool;
         TBool
+    | Bop (Concat, e1, e2) ->
+        unify e1.loc (w e1 env) TString;
+        unify e2.loc (w e2 env) TString;
+        TString
     | Bop ((Le | Lt | Gr | Gre), e1, e2) ->
         let t1 = w e1 env in
         let t2 = w e2 env in

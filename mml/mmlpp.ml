@@ -80,6 +80,7 @@ let uop_to_string = function
   | Not -> "not "
 
 let bop_to_string = function
+  | Concat -> "^"
   | Add   -> "+"  | Sub   -> "-"
   | Mul   -> "*"  | Div   -> "/"
   | Mod   -> "mod"
