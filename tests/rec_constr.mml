@@ -1,0 +1,5 @@
+type 'a list = 
+  | Cons of 'a * 'a list 
+  | Nil
+
+let rec l = Cons(l, Nil) in l

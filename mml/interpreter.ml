@@ -138,13 +138,13 @@ let eval_prog (prog : prog) : value * (int, heap_value) Hashtbl.t =
           | Sequ  | Snequ
           | Le    | Lt 
           | Gr    | Gre
-          | Or    | And), _, _))    -> VBool (evalb e env)
+          | Or    | And), _, _)) -> VBool (evalb e env)
     (* Opération Arithmétique *)
     | Int n           -> VInt n
     | (Uop (Neg, _) 
     | Bop ((Add | Sub 
           | Mod 
-          | Mul | Div), _, _))      -> VInt (evali e env)
+          | Mul | Div), _, _)) -> VInt (evali e env)
     (* Fonction *)
     | Fun (id, _, e)      -> eval_fun id e env
     | Let (id, e1, _, e2) -> eval e2 (Env.add id (eval e1 env) env)
@@ -223,15 +223,19 @@ let eval_prog (prog : prog) : value * (int, heap_value) Hashtbl.t =
         VPtr ptr
     | Strct struct_list ->
         let ptr = new_ptr () in
+        let env  = Env.add id (VPtr ptr) env in
         let struct_content = Hashtbl.create (List.length struct_list) in
         Hashtbl.add mem ptr (VStrct struct_content);
         List.iter (fun (field, valeur) -> 
-          (Hashtbl.add struct_content field 
-              (eval valeur (Env.add id (VPtr ptr) env)))) 
+          (Hashtbl.add struct_content field (eval valeur env))) 
           struct_list;
         VPtr ptr
+    | Constr(s, l) -> 
+        let ptr = new_ptr () in
+        let env  = Env.add id (VPtr ptr) env in
+        Hashtbl.add mem ptr (VConstr (s, List.map (fun e -> eval e env) l));
+        VPtr ptr
     | _ -> assert false
-  
   (* eval {a1 = e1; ... an = en; } *)
   and create_struct (s : (string * expr_loc) list) env : value =
     let data = Hashtbl.create (List.length s) in
