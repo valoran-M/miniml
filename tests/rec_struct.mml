@@ -3,4 +3,4 @@ let rec a_cool_list : cool_list = {
   value = 1;
   next = { value = 2; next= a_cool_list; };
 } in 
-a_cool_list.next.value
+a_cool_list

@@ -11,6 +11,8 @@ type value =
 (* Environnement : associe des valeurs à des noms de variables *)
 module Env = Map.Make (String)
 
+let ptr = ref []
+
 (* Élements du tas *)
 type heap_value =
     | VClos   of string * expr_loc * value Env.t
@@ -27,9 +29,14 @@ let rec value_to_string ?a:(a = false) ?q:(q = false) mem = function
   | VString s when q  -> Printf.sprintf "\"%s\"" s
   | VString s         -> s
   | VUnit             -> Printf.sprintf "()"
-  | VPtr p when a     -> 
+  | VPtr _ as v when List.mem v !ptr ->
+      "<cycle>"
+  | VPtr p as v when a -> 
+      ptr := v :: !ptr;
       Printf.sprintf "@%d -> %s" p (value_in_mem_to_string a p mem)
-  | VPtr p            -> Printf.sprintf "%s" (value_in_mem_to_string a p mem)
+  | VPtr p as v -> 
+      ptr := v :: !ptr;
+      Printf.sprintf "%s" (value_in_mem_to_string a p mem)
 
 and value_in_mem_to_string a p mem =
   match Hashtbl.find mem p with
@@ -46,11 +53,11 @@ and value_in_mem_to_string a p mem =
           "" t)
 
 and print_struct a mem s =
-  Printf.printf "{ ";
+  Printf.sprintf "{ %s}" (
   Hashtbl.fold
     (fun id v s -> 
       Printf.sprintf "%s = %s; %s" id (value_to_string ~a:a mem v) s)
-    s ""
+    s "")
 
 and list_value_to_string a mem = function
   | []      -> Printf.sprintf ")"
