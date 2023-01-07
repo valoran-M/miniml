@@ -66,6 +66,7 @@ Les expressions sont les suivantes :
 - `false` : un booléen faux
 - `'c'` : un charactère 
 - `"..."` : une chaine de charactère
+- `String.length` : taille de la chaine de charactère s
 - `s.[i]` : récupère le i ème charactère de la chaine de charactère s 
 - `()` : l'unité
 - `e1 ~ e2` : Les expression binaires
@@ -84,6 +85,7 @@ Les expressions sont les suivantes :
 - `e1.a <- e2` : l'expression d'écriture à un champ de structure
 - `[| e1; ...; en |]` : tableau mutable
 - `Array.make n e` : tableau de taille n contentant la valeur de e
+- `Array.length a` : taille du tableau a
 - `e.(i)` : case i du tableu e
 - `t.(i) <- e` : chnage la valeur de la case i du tableau t en la valeur de e 
 - `Enum` : Construction d'une variable enum
