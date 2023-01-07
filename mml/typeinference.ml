@@ -145,27 +145,27 @@ let type_inference prog file =
   (* pattern *)
 
   (* return type pattern with env *)
-  let rec type_pattern p env =
+  let rec type_pattern p (env: env) =
     match p.pat with
-    | Pat_jok -> (TVar (new_var ()), env)
-    | Pat_var x -> 
+    | Pat_jok     -> (TVar (new_var ()), env)
+    | Pat_var x   ->
         let v = new_var () in
         let env = SMap.add x { vars = VSet.empty; typ = TVar v } env in
         (TVar (new_var ()), env)
-    | Pat_int _ -> (TInt, env)
-    | Pat_bool _ -> (TBool, env)
-    | Pat_construct (c, l) -> (
+    | Pat_int _             -> (TInt, env)
+    | Pat_bool _            -> (TBool, env)
+    | Pat_construct (c, l)  -> (
         let f name (lc : (string * (typ * location) list) list)
             (s : string option) env =
           let fc (name, (types : (typ * location) list)) env =
             if c <> name then
-              false, env
+              (false, env)
             else
-              (true, List.fold_left2
-                (fun env (t, _) (p : pattern_loc) ->
-                  let tp, env = type_pattern p env in
-                  unify p.loc t tp; env) 
-                env types l)
+              ( true, List.fold_left2
+                  (fun env (t, _) (p : pattern_loc) ->
+                    let tp, env = type_pattern p env in
+                    unify p.loc t tp;
+                    env) env types l )
           in
           let b, env = Iter.list_find_ret fc lc env in
           (b, (name, s, env))
@@ -173,8 +173,8 @@ let type_inference prog file =
         try
           let n, opt, env = Iter.construct_find_ret f types env in
           match opt with
-          | None -> (TDef n, env)
-          | Some s ->
+          | None    -> (TDef n, env)
+          | Some s  ->
               let t = unfold_full (TVar s) in
               Hashtbl.remove subst s;
               (TParam (t, n), env)
@@ -187,7 +187,7 @@ let type_inference prog file =
     | Bool _ -> TBool
     | Char _ -> TChar
     | String _ -> TString
-    | GetS (e, i) -> 
+    | GetS (e, i) ->
         unify e.loc (w e env) TString;
         unify i.loc (w i env) TInt;
         TChar
@@ -230,7 +230,9 @@ let type_inference prog file =
         try instantiate (SMap.find s env)
         with Not_found ->
           Error.unbound_value
-            e.loc s (SMap.fold (fun s _ acc -> s :: acc) env []))
+            e.loc
+            s
+            (SMap.fold (fun s _ acc -> s :: acc) env []))
     | Let (s, e1, None, e2) ->
         let t1 = w e1 env in
         let st1 = generalize t1 env in
@@ -321,19 +323,18 @@ let type_inference prog file =
   (* retrieve the structure with the ids and the types so two iterations to do
      (typdef then in the defined structure)*)
   and struct_infer e l env =
-    let f s =
-      let iter_args (id1, e) (id2, t, _, _) =
-        if id1 = id2 then
-          try
-            unify e.loc t (w e env);
-            true
-          with _ -> false
-        else
-          false
-      in
-      try List.for_all2 iter_args l s with _ -> false
+    let iter_args (id1, e) (id2, t, _, _) =
+      if id1 = id2 then
+        try unify e.loc t (w e env); true
+        with _ -> false
+      else
+        false
     in
-    try TDef (Iter.struct_find f types)
+    try
+      TDef
+        (Iter.struct_find
+           (fun s -> try List.for_all2 iter_args l s with _ -> false)
+           types)
     with _ ->
       Error.struct_construct_error
         e.loc
@@ -358,10 +359,8 @@ let type_inference prog file =
         try
           let _, t, m, _ = (List.find (fun (id, _, _, _) -> id = x)) st in
           unify e2.loc (w e2 env) t;
-          if m then
-            TUnit
-          else
-            Error.is_not_mutable e.loc s x
+          if m  then TUnit
+                else Error.is_not_mutable e.loc s x
         with Not_found -> Error.struct_no_field e.loc s x)
     | TVar _ as t1 ->
         let t2 = snd (get_struct_args_mut e.loc x) in
@@ -370,47 +369,36 @@ let type_inference prog file =
     | t -> Error.not_a_struct e1.loc t
   and construct_infer e name l env =
     let lt2 = List.map (fun e -> (w e env, e)) l in
-    let rec iter_args cname = function
-      | [] -> None
+    let rec iter_args cname lc s acc =
+      match lc with
+      | [] -> (false, acc)
       | (id, lt1) :: l ->
           if name = id then
             try
               List.iter2 (fun (t1, _) (t2, e) -> unify e.loc t2 t1) lt1 lt2;
-              Some cname
+              (true, (cname, s))
             with Invalid_argument _ ->
               Error.nb_arg_construct
-                e.loc
-                id
-                (List.length lt1)
-                (List.length lt2)
+                e.loc id (List.length lt1) (List.length lt2)
           else
-            iter_args cname l
+            iter_args cname l s acc
     in
-    let rec aux = function
-      | [] ->
-          let lt2 = List.map fst lt2 in
-          Error.unbound_construct e.loc name lt2
-      | (_, StrctDef _) :: ld -> aux ld
-      | (cname, AlgDef (a, t)) :: ld -> (
-          match iter_args cname a with
-          | Some name -> constr_match name t
-          | None -> aux ld)
-    and constr_match name = function
+    let constr_type (name, tparam) =
+      match tparam with
       | Some t ->
           let tparam = unfold (TVar t) in
           Hashtbl.remove subst t;
           TParam (tparam, name)
       | None -> TDef name
     in
-    aux types
-  and check_print t e env = 
-    (match t with 
-    | Pt_int      -> unify e.loc TInt (w e env)
-    | Pt_bool     -> unify e.loc TBool (w e env)
-    | Pt_newline  -> unify e.loc TUnit (w e env)
-    | Pt_char     -> unify e.loc TChar (w e env)
-    | Pt_string   
-    | Pt_endline  -> unify e.loc TString (w e env));
+    constr_type (Iter.construct_find_ret iter_args types ("", None))
+  and check_print t e env =
+    (match t with
+    | Pt_int -> unify e.loc TInt (w e env)
+    | Pt_bool -> unify e.loc TBool (w e env)
+    | Pt_newline -> unify e.loc TUnit (w e env)
+    | Pt_char -> unify e.loc TChar (w e env)
+    | Pt_string | Pt_endline -> unify e.loc TString (w e env));
     TUnit
   in
 
