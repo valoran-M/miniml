@@ -132,6 +132,19 @@ l| .............
 Error: ....
 ```
 
+# Utilisation 
+
+compilation:
+```
+dune build
+```
+
+lancement:
+```
+dune exec -- miniml file.mml [-a]   # exécute le code (-a affiche les adresse dans le tas)
+dune exec -- debug file.mml         # affiche l'AST
+```
+
 # Avancée
 
 |              | mmllexer | mmlparser | typechecker | interpreter |

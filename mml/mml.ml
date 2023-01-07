@@ -22,7 +22,9 @@ type tDef =
     | AlgDef of (string * (typ * location) list) list 
                            * string option
 
-type uop = Neg | Not
+type uop = 
+    | Neg | Not
+    | Slength | Alength
 
 type bop =
     | Concat

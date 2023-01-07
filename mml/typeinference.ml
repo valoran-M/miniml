@@ -187,6 +187,9 @@ let type_inference prog file =
     | Bool _ -> TBool
     | Char _ -> TChar
     | String _ -> TString
+    | Uop (Slength, e) -> 
+        unify e.loc (w e env) TString; 
+        TInt
     | GetS (e, i) ->
         unify e.loc (w e env) TString;
         unify i.loc (w i env) TInt;
@@ -285,6 +288,9 @@ let type_inference prog file =
     | NArray (e, n) ->
         unify n.loc (w n env) TInt;
         TArray (w e env)
+    | Uop (Alength, e) ->
+        unify e.loc (w e env) (TArray(TVar (new_var ())));
+        TInt
     | GetI (e, i) ->
         let var = TVar (new_var ()) in
         unify e.loc (w e env) (TArray var);

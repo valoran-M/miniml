@@ -119,6 +119,15 @@ let eval_prog (prog : prog) : value * (int, heap_value) Hashtbl.t =
     | Pt_newline       -> print_newline ();
   in
 
+  let value_length (v: value): value =
+    match v with 
+    | VPtr v -> (
+      match Hashtbl.find mem v with 
+      | VArray a -> VInt (Array.length a) | _ -> assert false )
+    | VString s -> VInt (String.length s)
+    | _ -> assert false
+  in
+
   (* Interprétation d'une expression, en fonction d'un environnement
       et de la mémoire globale *)
   let rec eval (e : expr_loc) (env : value Env.t) : value =
@@ -145,6 +154,8 @@ let eval_prog (prog : prog) : value * (int, heap_value) Hashtbl.t =
     | Bop ((Add | Sub 
           | Mod 
           | Mul | Div), _, _)) -> VInt (evali e env)
+    | Uop ((Slength 
+          | Alength), e)       -> value_length (eval e env)
     (* Fonction *)
     | Fun (id, _, e)      -> eval_fun id e env
     | Let (id, e1, _, e2) -> eval e2 (Env.add id (eval e1 env) env)

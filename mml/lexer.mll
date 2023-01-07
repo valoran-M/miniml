@@ -102,6 +102,8 @@ rule pattern = parse
     | ident as name     { id_to_lexem name }
     | tvar  as var      { T_VAR(var) } 
     | "Array.make"      { A_CREATE }
+    | "Array.length"    { A_LENGTH }
+    | "String.length"   { S_LENGTH }
     | '\"'
       { 
         begin_string lexbuf;

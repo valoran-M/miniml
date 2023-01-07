@@ -46,6 +46,7 @@
 %token <int> CST            "n"
 %token <char> CHAR          "'c'"
 %token <string> STRING      "\"exemple\""
+%token S_LENGTH             "String.lengt"
 %token UNIT                 "()"
 (* Types *)
 %token <string>T_VAR        "'a"
@@ -96,6 +97,7 @@
 %token S_BRACKET      "["
 %token E_BRACKET      "]"
 %token A_CREATE       "Array.create"
+%token A_LENGTH       "Array.length"
 %token LET            "let"
 %token FUN            "fun"
 %token REC            "rec"
@@ -337,6 +339,8 @@ pattern:
 %inline uop:
     | MINUS { Neg }
     | NOT   { Not }
+    | A_LENGTH { Alength }
+    | S_LENGTH { Slength }
 ;
 
 %inline binop:

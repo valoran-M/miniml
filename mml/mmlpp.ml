@@ -78,9 +78,11 @@ let rec print_types ppf = function
 let uop_to_string = function
   | Neg -> "-"
   | Not -> "not "
+  | Alength -> "Array.length"
+  | Slength -> "String.length"
 
 let bop_to_string = function
-  | Concat -> "^"
+  | Concat  -> "^"
   | Add   -> "+"  | Sub   -> "-"
   | Mul   -> "*"  | Div   -> "/"
   | Mod   -> "mod"
