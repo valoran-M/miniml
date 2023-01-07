@@ -70,7 +70,7 @@ Les expressions sont les suivantes :
 - `s.[i]` : récupère le i ème charactère de la chaine de charactère s 
 - `()` : l'unité
 - `e1 ~ e2` : Les expression binaires
-    - ~ est un opérateur binaire parmis `+`, `-`, `*`, `/`, `mod`, `==`, `!=`, `<`, `<=`, `>`, '>=', `&&`, `||`
+    - ~ est un opérateur binaire parmis `+`, `-`, `*`, `/`, `mod`, `==`, `!=`, `<`, `<=`, `>`, `>=`, `&&`, `||`
     - l'égalité structurelle et la négation `=`, `<>`
 - `~ e` : Les expression unaires
     - ~ est un opérateur unaire parmis `-`, `not`
