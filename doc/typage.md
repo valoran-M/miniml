@@ -3,6 +3,8 @@
 - int
 - bool
 - unit
+- string
+- char
 - polymorph 'a 
 - types -> types 
 - struct(a)
@@ -170,3 +172,7 @@ E |- e: tp   E |- pattern_typ p_i: tp     E, pattern_env p_i |- e_i : t   i in [
 -------------------------------------------------------------------------------------
                         E |- match e with [p_i -> e_i]+ : t
 ```
+
+# Print 
+
+le print est associer à sont type d'entrée comme une fonction
