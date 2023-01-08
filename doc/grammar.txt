@@ -5,6 +5,7 @@
   | int
   | bool
   | unit
+  | REF <types>
   | T_VAR
   | T_VAR IDENT
   | IDENT
@@ -24,12 +25,16 @@
   | <uop> <exprssion>
   | <expr> <binop> <expr>
   | <app_expr> <simple_expr>
+  | REF <simple_expr>
+  | IDENT := <expression>
   | if <expr_seq> then <expr>
   | if <expr_seq> then <expr> else <expr>
   | fun <fun_args> -> <expr_seq>
   | <s_expr>.IDENT <- <expr>
   | <s_expr>.(<expr_seq>) <- <expr>
   | let [rec]? IDENT [<let_ags>]* [:<types>] = <expr_seq> in <expr_seq>
+  | MATCH <expression> WITH [pattern_expr]+
+  | <print_type> <simple_expr>
 
 <s_expr> ::=
   | n
@@ -49,9 +54,29 @@
   | ()
   | (IDENT: <types>)
 
+<print_type> ::=
+  | print_int
+  | print_bool
+  | print_char
+  | print_string
+  | print_endline
+  | print_newline
+
+<pattern> ::=
+  | n 
+  | id 
+  | bool 
+  | CONSTR 
+  | CONSTR ( <pattern> [, <pattern>]* )
+
+<pattern_expr> ::= 
+  | | <pattern> -> expr_seq
+
 <uop> ::=
   | -
   | not
+  | !
+  | Array.length | String.length
 
 <binop> ::=
   | +   | -

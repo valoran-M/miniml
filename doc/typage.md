@@ -44,7 +44,6 @@ E |- - e : int
   E |- e : bool
 -----------------
 E |- not e : bool
-
 ```
 
 ## Binaire
@@ -65,7 +64,7 @@ E |- not e : bool
   E |- e1 (< | <= | >= | >) e2 : bool
 ```
 
-# Varaibles
+# Variables
 
 
 ``` 
@@ -143,4 +142,31 @@ types paramétrique (`type 'a id = ...`) compliqué à écrire
   E |- e : t array    E |- n : int        E |- e1 : t array   E |- n : int   E |- e2 : t
 ------------------------------------    --------------------------------------------------
               E |- e.(n) : t                         E |- e1.(n) <- e2 : unit
+```
+
+# Ref 
+
+```
+  E |- e : ref t
+-----------------
+   E |- !e : t
+
+     E |- e : t
+---------------------
+  E |- ref e : ref t
+
+E |- E(id): ref t     E |- e : t
+--------------------------------
+     E |- id := e : unit
+```
+
+# Pattern matching
+
+on supose qu'une fonction nous donne le type du pattern
+et les varaible associer à leur type déclaré dans le pattern
+
+```
+E |- e: tp   E |- pattern_typ p_i: tp     E, pattern_env p_i |- e_i : t   i in [1, n]
+-------------------------------------------------------------------------------------
+                        E |- match e with [p_i -> e_i]+ : t
 ```

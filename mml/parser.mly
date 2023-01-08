@@ -127,6 +127,7 @@
 %nonassoc SEMI
 %nonassoc T_VAR
 %nonassoc L_ARROW
+%nonassoc REF                   (* bellow L_ARROW (ref t <- t)*)
 %right    R_ARROW               (* type(t -> t -> t) *)
 %nonassoc THEN                  (* BELLOW else if ... then ... *)
 %nonassoc ELSE                  (* if ... then ... else ... *)
@@ -239,6 +240,7 @@ types:
     | T_INT                     { TInt }
     | T_BOOL                    { TBool }
     | T_UNIT                    { TUnit }
+    | REF t=types               { TRef(t) }
     | t=T_VAR                   { TVar(t) }
     | t=T_VAR id=IDENT          { TParam(TVar(t), id) }
     | id=IDENT                  { TDef(id) }

@@ -69,6 +69,9 @@ Les expressions sont les suivantes :
 - `String.length s` : taille de la chaine de charactère s
 - `s.[i]` : récupère le i ème charactère de la chaine de charactère s 
 - `()` : l'unité
+- `ref e` : une ref vers e
+- `!e` : la valeur à l'adresse e
+- `id := e` : place la valeur de e dans l'adresse id
 - `e1 ~ e2` : Les expression binaires
     - ~ est un opérateur binaire parmis `+`, `-`, `*`, `/`, `mod`, `==`, `!=`, `<`, `<=`, `>`, `>=`, `&&`, `||`
     - l'égalité structurelle et la négation `=`, `<>`
