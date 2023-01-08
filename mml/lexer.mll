@@ -10,6 +10,7 @@
             [
                 "true", BOOL(true);
                 "false", BOOL(false);
+                "ref", REF;
                 (* calcul *)
                 "not", NOT;
                 "mod", MOD;
@@ -121,16 +122,6 @@ rule pattern = parse
     | "'\\t'" { CHAR('\t') }
     | "'\\r'" { CHAR('\r') }
     | "'" (_ as c) "'"  { CHAR(c) }
-    (* symboles *)
-    | "="       { S_EQ }
-    | "->"      { R_ARROW }
-    | "<-"      { L_ARROW }
-    | ":"       { COLON }
-    | ";"       { SEMI }
-    | ","       { COMMA }
-    | "."       { DOT }
-    | "|"       { BAR }
-    | "^"       { CONCAT }
     (* opérations booléennes *)
     | "=="      { EQU }
     | "!="      { NEQU }
@@ -146,6 +137,18 @@ rule pattern = parse
     | "-"       { MINUS }
     | "*"       { STAR }
     | "/"       { DIV }
+    (* symboles *)
+    | ":="      { COLONE_EQ }
+    | "="       { S_EQ }
+    | "->"      { R_ARROW }
+    | "<-"      { L_ARROW }
+    | ":"       { COLON }
+    | ";"       { SEMI }
+    | ","       { COMMA }
+    | "."       { DOT }
+    | "|"       { BAR }
+    | "^"       { CONCAT }
+    | "!"       { EXCLAMA }
     (* PAR et BRACE *)
     | "()"      { UNIT }
     | "("       { S_PAR }

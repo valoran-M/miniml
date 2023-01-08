@@ -8,6 +8,7 @@ type typ =
     | TChar
     | TString
     | TUnit
+    | TRef    of typ
     | TVar    of string
     | TFun    of typ * typ
     | TDef    of string
@@ -24,6 +25,7 @@ type tDef =
 
 type uop = 
     | Neg | Not
+    | GetRef
     | Slength | Alength
 
 type bop =
@@ -62,6 +64,8 @@ type expr =
     | Char      of char
     | String    of string
     | Unit
+    | Ref       of expr_loc
+    | SetRef    of (string * location) * expr_loc
     | Uop       of uop * expr_loc
     | Bop       of bop * expr_loc * expr_loc
     | Var       of string

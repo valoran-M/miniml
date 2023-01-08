@@ -16,6 +16,7 @@ let ptr = ref []
 (* Élements du tas *)
 type heap_value =
     | VClos   of string * expr_loc * value Env.t
+    | VRef    of value
     | VStrct  of (string, value) Hashtbl.t
     | VConstr of string * value list
     | VArray  of value array
@@ -41,6 +42,7 @@ let rec value_to_string ?a:(a = false) ?q:(q = false) mem = function
 and value_in_mem_to_string a p mem =
   match Hashtbl.find mem p with
   | VClos (s, _, _)   -> Printf.sprintf "%s" s
+  | VRef v            -> Printf.sprintf "ref %s" (value_to_string mem v)
   | VStrct s          -> print_struct a mem s
   | VConstr (s, v)    -> 
       Printf.sprintf "%s ( %s" s (list_value_to_string a mem v)

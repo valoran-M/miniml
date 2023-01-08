@@ -64,8 +64,8 @@ let type_inference prog file =
     | TVar s ->
         if Hashtbl.mem subst s then
           unfold (Hashtbl.find subst s)
-        else
-          t
+        else t
+    | TRef t -> TRef (unfold t)
     | TParam (t, s) -> TParam (unfold t, s)
     | TArray t -> TArray (unfold t)
     | _ -> t
@@ -95,6 +95,8 @@ let type_inference prog file =
     | TChar, TChar -> ()
     | TString, TString -> ()
     | TUnit, TUnit -> ()
+    | TRef t1, TRef t2 ->
+        unify l t1 t2
     | TDef s1, TDef s2 when s1 = s2 -> ()
     | (TParam (t1', s1) as t1), (TParam (t2', s2) as t2) when s1 = s2 -> (
         try unify l t1' t2' with _ -> Error.type_error l t1 t2)
@@ -183,10 +185,18 @@ let type_inference prog file =
 
   let rec w (e : expr_loc) env =
     match e.expr with
-    | Unit -> TUnit
-    | Bool _ -> TBool
-    | Char _ -> TChar
-    | String _ -> TString
+    | Unit      -> TUnit
+    | Bool _    -> TBool
+    | Char _    -> TChar
+    | String _  -> TString
+    | Ref e     -> TRef (w e env)
+    | SetRef ((id, loc), e) ->
+        unify loc (SMap.find id env).typ (TRef (w e env));
+        TUnit
+    | Uop(GetRef, e) ->
+        let t = TVar(new_var ()) in
+        unify e.loc (w e env) (TRef(t));
+        unfold t
     | Uop (Slength, e) -> 
         unify e.loc (w e env) TString; 
         TInt

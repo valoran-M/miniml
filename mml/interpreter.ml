@@ -22,6 +22,27 @@ let eval_prog (prog : prog) : value * (int, heap_value) Hashtbl.t =
     | _ -> assert false
   in
 
+  let make_ref (v: value) : value =
+    let ptr = new_ptr () in
+    Hashtbl.add mem ptr (VRef(v));
+    VPtr ptr
+  in
+
+  let get_ref: value->value = function
+    | VPtr p -> 
+        (match Hashtbl.find mem p with 
+        | VRef v -> v | _ -> assert false)
+    | _ -> assert false
+  in
+
+  let set_ref (v:value) (a:value): value = 
+    match a with | VPtr a -> (
+      match Hashtbl.find mem a with 
+      | VRef _ -> Hashtbl.replace mem a (VRef v); VUnit
+      | _ -> assert false)
+    | _ -> assert false
+  in
+
   let rec struc_equal e (v1: value) (v2: value) : bool =
     match v1, v2 with
     | VInt  v1  , VInt  v2  -> v1 = v2
@@ -134,6 +155,9 @@ let eval_prog (prog : prog) : value * (int, heap_value) Hashtbl.t =
     match e.expr with
     | Unit            -> VUnit
     | Var id          -> Env.find id env
+    | Ref e           -> make_ref (eval e env)
+    | Uop (GetRef, e) -> get_ref (eval e env)
+    | SetRef ((id, _), e) -> set_ref (eval e env) (Env.find id env)
     (* char string *)
     | Char c          -> VChar c
     | String s        -> VString s

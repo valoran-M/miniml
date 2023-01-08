@@ -61,7 +61,7 @@
 
 %token CONCAT   "^"
 (* Expressions booléennes *)
-%token NOT      "!"
+%token NOT      "not"
 %token EQU      "=="
 %token NEQU     "!="
 %token LT       "<"
@@ -83,6 +83,8 @@
 %token THEN     "then"
 %token  ELSE    "else"
 (* Autres *)
+%token COLONE_EQ      ":="
+%token EXCLAMA        "!"
 %token SEMI           ";"
 %token COLON          ":"
 %token R_ARROW        "<-"
@@ -101,6 +103,7 @@
 %token LET            "let"
 %token FUN            "fun"
 %token REC            "rec"
+%token REF            "ref"
 %token IN             "in"
 %token BAR            "|"
 %token OF             "of"
@@ -128,6 +131,7 @@
 %nonassoc THEN                  (* BELLOW else if ... then ... *)
 %nonassoc ELSE                  (* if ... then ... else ... *)
 %left     BAR
+%nonassoc COLONE_EQ
 %left     OR                    (* expr( e || e || e) *)
 %left     AND                   (* expr( e && e && e) *)
 %nonassoc NOT                   (* expr *)
@@ -138,10 +142,11 @@
 %left     PLUS MINUS CONCAT     (* expr( e + e + e) *)
 %left     MOD                   (* expr( e mod e mod e) *)
 %left     STAR DIV              (* expr( e * e * e) *)
+%nonassoc EXCLAMA
 
 %nonassoc prec_constr_empty     (* C vs C (x) *)
 (* Autres *)
-%nonassoc S_PAR
+%nonassoc S_PAR S_LENGTH A_LENGTH
           IDENT
 
 %%
@@ -201,6 +206,10 @@ expression:
         { mk_expr $sloc (Bop(op, e1, e2)) }
     | e=app_expr l=simple_expression
         { mk_expr $sloc (App(e, l)) }
+    | id=IDENT COLONE_EQ e=expression
+        { mk_expr $sloc (SetRef((id, mk_loc ($loc(id))), e))}
+    | REF e=simple_expression
+        { mk_expr $sloc (Ref(e)) }
     | IF c=expr_seq THEN e=expression           
         { mk_expr $sloc (If(c, e, None)) }
     | IF c=expr_seq THEN e1=expression 
@@ -339,6 +348,7 @@ pattern:
 %inline uop:
     | MINUS { Neg }
     | NOT   { Not }
+    | EXCLAMA  { GetRef }
     | A_LENGTH { Alength }
     | S_LENGTH { Slength }
 ;

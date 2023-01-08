@@ -24,6 +24,7 @@ let rec typ_to_string = function
   | TChar -> "char"
   | TString -> "string"
   | TUnit -> "unit"
+  | TRef t -> Printf.sprintf "ref %s" (typ_to_string t)
   | TVar s -> 
     if Hashtbl.mem mem_var s then
       Printf.sprintf "'%s" (print_list_char (Hashtbl.find mem_var s))
@@ -78,8 +79,9 @@ let rec print_types ppf = function
 let uop_to_string = function
   | Neg -> "-"
   | Not -> "not "
-  | Alength -> "Array.length"
-  | Slength -> "String.length"
+  | GetRef  -> "!"
+  | Alength -> "Array.length "
+  | Slength -> "String.length "
 
 let bop_to_string = function
   | Concat  -> "^"
@@ -106,6 +108,8 @@ let rec print_expr ppf = function
   | Char c -> fprintf ppf "'%c'" c
   | String s -> fprintf ppf "%s" s
   | Unit -> fprintf ppf "()"
+  | Ref e -> fprintf ppf "ref %a" print_expr e.expr
+  | SetRef ((id, _), e) -> fprintf ppf "%s := %a" id print_expr e.expr
   | Var x -> fprintf ppf "%s" x
   | Fun (x, Some t, e) ->
       fprintf ppf "fun (%s: %s) -> %a" x (typ_to_string t) print_expr e.expr

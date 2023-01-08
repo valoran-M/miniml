@@ -12,6 +12,7 @@ module Env : Map.S with type key = string
 
 type heap_value =
     | VClos   of string * expr_loc * value Env.t
+    | VRef    of value
     | VStrct  of (string, value) Hashtbl.t
     | VConstr of string * value list
     | VArray  of value array
