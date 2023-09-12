@@ -6,7 +6,7 @@
     (* hashtable avec tous les mots clefs *)
     let keyword_table = Hashtbl.create 22
     let () =
-        List.iter (fun (x, y) -> Hashtbl.add keyword_table x y )         
+        List.iter (fun (x, y) -> Hashtbl.add keyword_table x y )
             [
                 "true", BOOL(true);
                 "false", BOOL(false);
@@ -33,7 +33,7 @@
                 "type", TYPE;
                 "mutable", MUTABLE;
                 "of", OF;
-                
+
             ]
 
     let is_keyword name = Hashtbl.mem keyword_table name
@@ -59,21 +59,21 @@
       l := (lexbuf.lex_start_p.pos_lnum, start, start + 2) :: !l
 
     let char_pos lexbuf =
-      (lexbuf.lex_start_p.pos_cnum - lexbuf.lex_start_p.pos_bol, 
+      (lexbuf.lex_start_p.pos_cnum - lexbuf.lex_start_p.pos_bol,
         lexbuf.lex_start_p.pos_lnum)
-    
-    let begin_string lexbuf = 
+
+    let begin_string lexbuf =
       let start = lexbuf.lex_start_p.pos_cnum - lexbuf.lex_start_p.pos_bol in
       l := (lexbuf.lex_start_p.pos_lnum, start, start + 1) :: !l
 
     let end_bloc () =
-      match !l with 
+      match !l with
       | [] -> assert false
-      | _::ls -> l := ls 
+      | _::ls -> l := ls
 }
 
 let digit = [ '0'-'9' ]
-let number = digit+ 
+let number = digit+
 let alpha = ['a'-'z' 'A'-'Z']
 let ident = ['a'-'z' '_'] (alpha | '_' | digit)*
 let construct = ['A'-'Z'] (alpha | '_' | digit)*
@@ -86,7 +86,7 @@ let false = "false"
 rule pattern = parse
     | ['\n']            { new_line lexbuf; pattern lexbuf }
     | [' ' '\t' '\r']+  { pattern lexbuf }
-    | "(*"              
+    | "(*"
       { begin_comment lexbuf; comment lexbuf; pattern lexbuf}
     | number as _number {
             CST(int_of_string _number)
@@ -101,12 +101,12 @@ rule pattern = parse
                 IDENT(name)
         }
     | ident as name     { id_to_lexem name }
-    | tvar  as var      { T_VAR(var) } 
+    | tvar  as var      { T_VAR(var) }
     | "Array.make"      { A_CREATE }
     | "Array.length"    { A_LENGTH }
     | "String.length"   { S_LENGTH }
     | '\"'
-      { 
+      {
         begin_string lexbuf;
         string lexbuf;
         let s  = get_stored_string () in
@@ -169,7 +169,7 @@ and comment = parse
     | _     { comment lexbuf }
     | eof   { Error.raise_unclosed (!l) "unterminated comment" }
 
-and string = parse 
+and string = parse
     | '\\' (['\\' '\'' '\"'] as c )
         { store_string_char c; string lexbuf }
     | "\\n"
@@ -182,7 +182,7 @@ and string = parse
         { end_bloc () }
     | "\n"
         { Error.raise_unclosed (!l) "unterminated string" }
-    | eof 
+    | eof
         { Error.raise_unclosed (!l) "unterminated string" }
-    | _ as c 
+    | _ as c
         { store_string_char c; string lexbuf}
